@@ -1,0 +1,128 @@
+# =========================
+# Unity generated folders
+# =========================
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Unity cache
+.vs/
+.gradle/
+ExportedObj/
+Consulo/
+sysinfo.txt
+
+# =========================
+# Unity generated files
+# =========================
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# =========================
+# Unity crash/debug
+# =========================
+crashlytics-build.properties
+*.stackdump
+
+# =========================
+# Android / Gradle
+# =========================
+.gradle/
+gradle-app.setting
+gradle.properties
+local.properties
+*.apk
+*.aab
+*.apks
+*.keystore
+*.jks
+
+# Android Studio
+.idea/
+*.iml
+
+# =========================
+# Unity Android exported project
+# =========================
+/[Aa]ndroid/
+[Bb]uild/
+[Bb]uilds/
+
+# =========================
+# ARCore / XR generated cache
+# =========================
+ARCoreAssets/
+*.aar
+*.aar.meta
+
+# OJO:
+# Si agregaste manualmente .aar necesarios en Assets/Plugins/Android,
+# NO los ignores. En ese caso comenta estas líneas:
+# *.aar
+# *.aar.meta
+
+# =========================
+# Visual Studio / Rider / VS Code
+# =========================
+.vs/
+.vscode/
+.idea/
+*.sln.DotSettings.user
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Addressables / AssetBundles generated builds
+# =========================
+ServerData/
+[Aa]sset[Bb]undles/
+
+# =========================
+# Unity package manager cache
+# =========================
+.upmconfig.toml
+
+# =========================
+# Optional: large local captures
+# =========================
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# Si tus videos hacen parte del proyecto, comenta estas líneas:
+# *.mp4
+# *.mov
+# *.avi
+# *.mkv
