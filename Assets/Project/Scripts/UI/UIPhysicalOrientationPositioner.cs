@@ -12,6 +12,7 @@ public class UIPhysicalOrientationPositioner : MonoBehaviour
     }
 
     [Header("Panel Size")]
+    [SerializeField] private bool applyPanelSize = true;
     [SerializeField] private Vector2 size = new Vector2(800f, 300f);
 
     [Header("Margin")]
@@ -149,7 +150,10 @@ public class UIPhysicalOrientationPositioner : MonoBehaviour
 
     private void ApplyLayout(Corner corner, float rotationZ, Vector2 extraOffset)
     {
-        rectTransform.sizeDelta = size;
+        if (applyPanelSize)
+        {
+            rectTransform.sizeDelta = size;
+        }
         rectTransform.localScale = Vector3.one;
 
         if (rotatePanelWithDevice)
@@ -218,10 +222,16 @@ public class UIPhysicalOrientationPositioner : MonoBehaviour
         }
     }
 
+    private Vector2 GetCurrentSize()
+    {
+        return applyPanelSize ? size : rectTransform.sizeDelta;
+    }
+
     private Vector2 GetRotationCompensation(Corner corner, float rotationZ)
     {
-        float width = size.x;
-        float height = size.y;
+        Vector2 currentSize = GetCurrentSize();
+        float width = currentSize.x;
+        float height = currentSize.y;
 
         rotationZ = NormalizeAngle(rotationZ);
 

@@ -4,6 +4,17 @@ using UnityEngine;
 
 public class ARPhysicsLabController : MonoBehaviour
 {
+    private enum LabState
+    {
+        Intro,
+        WaitingForCannonPlacement,
+        WaitingForTargetPlacement,
+        ReadyToLaunch,
+        ProjectileInFlight,
+        AttemptResult,
+        Completed
+    }
+
     [Header("Attempts")]
     [SerializeField] private int defaultMaxAttempts = 3;
     [SerializeField] private AttemptsDisplayUI attemptsDisplayUI;
@@ -13,36 +24,33 @@ public class ARPhysicsLabController : MonoBehaviour
     private int usedAttempts;
     private bool labLocked;
 
-    [Header("Instruction UI")]
-    [SerializeField] private GameObject instructionPanel;
-    [SerializeField] private CanvasGroup instructionCanvasGroup;
-    [SerializeField] private TMP_Text instructionText;
+    [Header("Startup Loading")]
+    [SerializeField] private GameObject startupPanel;
+    [SerializeField] private CanvasGroup startupCanvasGroup;
+    [SerializeField] private float startupVisibleDuration = 1.5f;
+    [SerializeField] private float startupFadeOutDuration = 0.5f;
 
-    [Header("Instruction Transition")]
-    [SerializeField] private float showDelay = 0.4f;
-    [SerializeField] private float fadeInDuration = 0.35f;
-    [SerializeField] private float fadeOutDuration = 0.35f;
+    [Header("AR Placement")]
+    [SerializeField] private ARPlacementManager placementManager;
+    [SerializeField] private bool allowPlacementDuringIntro = false;
+
+
+    [Header("Instruction System")]
+    [SerializeField] private InstructionPanelController instructionPanelController;
+
+    [SerializeField] private InstructionStep introStep;
+    [SerializeField] private InstructionStep placeCannonStep;
+    [SerializeField] private InstructionStep placeTargetStep;
+    [SerializeField] private InstructionStep readyStep;
+    [SerializeField] private InstructionStep noAttemptsStep;
 
     [Header("Exercise UI")]
     [SerializeField] private TMP_Text distanceText;
-
-    [Header("Messages")]
-    [SerializeField]
-    private string waitingCannonMessage =
-        "Busca una superficie y toca para colocar la isla del cañón.";
-
-    [SerializeField]
-    private string waitingTargetMessage =
-        "Ahora toca otra superficie para colocar la isla objetivo.";
-
-    [SerializeField]
-    private string readyMessage =
-        "Reto listo. Ajusta la velocidad y el ángulo para impactar el objetivo.";
+    [SerializeField] private TMP_Text heightText;
+    [SerializeField] private TMP_Text horizontalDistanceText;
 
     [Header("Projectile Safety")]
     [SerializeField] private ProjectileKillZone projectileKillZone;
-
-    [SerializeField] private float readyMessageDuration = 3f;
 
     private CannonLauncher cannonLauncher;
     private AppleTarget appleTarget;
@@ -51,7 +59,8 @@ public class ARPhysicsLabController : MonoBehaviour
     private float heightDifference;
     private float straightDistance;
 
-    private Coroutine instructionRoutine;
+    private LabState currentState;
+    private Coroutine introRoutine;
 
     public float HorizontalDistance => horizontalDistance;
     public float HeightDifference => heightDifference;
@@ -61,31 +70,126 @@ public class ARPhysicsLabController : MonoBehaviour
     public int RemainingAttempts => remainingAttempts;
     public int UsedAttempts => usedAttempts;
 
-    private void Awake()
-    {
-        if (instructionCanvasGroup == null && instructionPanel != null)
-        {
-            instructionCanvasGroup = instructionPanel.GetComponent<CanvasGroup>();
-        }
-
-        if (instructionCanvasGroup != null)
-        {
-            instructionCanvasGroup.alpha = 0f;
-            instructionCanvasGroup.interactable = false;
-            instructionCanvasGroup.blocksRaycasts = false;
-        }
-
-        if (instructionPanel != null)
-            instructionPanel.SetActive(true);
-    }
-
     private void Start()
     {
         ApplyExerciseData(AndroidBridge.Instance != null
             ? AndroidBridge.Instance.CurrentExerciseData
             : null);
 
-        ShowWaitingForCannon();
+        if (placementManager != null)
+            placementManager.SetPlacementEnabled(false);
+
+        if (startupPanel != null)
+            startupPanel.SetActive(true);
+
+        if (startupCanvasGroup != null)
+            startupCanvasGroup.alpha = 1f;
+
+        StartCoroutine(StartupRoutine());
+    }
+
+    private IEnumerator StartupRoutine()
+    {
+        yield return new WaitForSecondsRealtime(startupVisibleDuration);
+
+        if (startupCanvasGroup != null)
+        {
+            float elapsed = 0f;
+            float startAlpha = startupCanvasGroup.alpha;
+
+            while (elapsed < startupFadeOutDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / startupFadeOutDuration);
+                startupCanvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, t);
+                yield return null;
+            }
+
+            startupCanvasGroup.alpha = 0f;
+        }
+
+        if (startupPanel != null)
+            startupPanel.SetActive(false);
+
+        StartIntroFlow();
+    }
+
+    private void StartIntroFlow()
+    {
+        CancelNarrativeRoutines();
+
+        if (placementManager != null)
+            placementManager.SetPlacementEnabled(allowPlacementDuringIntro);
+
+        introRoutine = StartCoroutine(IntroFlowRoutine());
+    }
+
+    private IEnumerator IntroFlowRoutine()
+    {
+        currentState = LabState.Intro;
+
+        if (instructionPanelController != null && introStep != null)
+        {
+            instructionPanelController.ShowStep(introStep);
+            yield return new WaitForSecondsRealtime(
+                instructionPanelController.GetTotalStepDuration(introStep)
+            );
+        }
+
+        introRoutine = null;
+
+        SetState(LabState.WaitingForCannonPlacement);
+    }
+
+    private void SetState(LabState newState)
+    {
+        currentState = newState;
+
+        switch (currentState)
+        {
+            case LabState.WaitingForCannonPlacement:
+                if (placementManager != null)
+                    placementManager.SetPlacementEnabled(true);
+
+                ShowPlaceCannonInstruction();
+                break;
+
+            case LabState.WaitingForTargetPlacement:
+                if (placementManager != null)
+                    placementManager.SetPlacementEnabled(true);
+
+                ShowPlaceTargetInstruction();
+                break;
+
+            case LabState.ReadyToLaunch:
+                if (placementManager != null)
+                    placementManager.SetPlacementEnabled(false);
+
+                ShowReadyInstruction();
+                break;
+
+            case LabState.ProjectileInFlight:
+                if (placementManager != null)
+                    placementManager.SetPlacementEnabled(false);
+                break;
+
+            case LabState.AttemptResult:
+                break;
+
+            case LabState.Completed:
+                if (placementManager != null)
+                    placementManager.SetPlacementEnabled(false);
+                break;
+        }
+    }
+
+    private void CancelNarrativeRoutines()
+    {
+        if (introRoutine != null)
+        {
+            StopCoroutine(introRoutine);
+            introRoutine = null;
+        }
     }
 
     public void ApplyExerciseData(ExerciseData data)
@@ -113,12 +217,18 @@ public class ARPhysicsLabController : MonoBehaviour
             return false;
         }
 
+        if (currentState != LabState.ReadyToLaunch)
+        {
+            Debug.LogWarning("El laboratorio todavía no está listo para disparar.");
+            return false;
+        }
+
         if (remainingAttempts <= 0)
         {
             Debug.LogWarning("No quedan intentos.");
             labLocked = true;
             UpdateAttemptsUI();
-            ShowLaunchInfo("No quedan intentos. Laboratorio finalizado.");
+            ShowNoAttemptsInstruction();
             return false;
         }
 
@@ -138,10 +248,11 @@ public class ARPhysicsLabController : MonoBehaviour
 
         UpdateAttemptsUI();
 
+        currentState = LabState.ProjectileInFlight;
+
         if (remainingAttempts <= 0)
         {
             labLocked = true;
-            ShowLaunchInfo("No quedan intentos. Laboratorio finalizado.");
         }
 
         return true;
@@ -149,7 +260,9 @@ public class ARPhysicsLabController : MonoBehaviour
 
     public bool CanFire()
     {
-        return !labLocked && remainingAttempts > 0;
+        return !labLocked &&
+               remainingAttempts > 0 &&
+               currentState == LabState.ReadyToLaunch;
     }
 
     private void UpdateAttemptsUI()
@@ -160,12 +273,47 @@ public class ARPhysicsLabController : MonoBehaviour
         }
     }
 
-    public void ShowWaitingForCannon()
+    private void ShowPlaceCannonInstruction()
     {
-        ShowInstruction(waitingCannonMessage, false);
-
         if (distanceText != null)
             distanceText.text = "";
+
+        if(heightText != null)
+            heightText.text = "";
+
+        if(horizontalDistanceText != null)
+            horizontalDistanceText.text = "";
+
+
+        if (instructionPanelController != null && placeCannonStep != null)
+            instructionPanelController.ShowStep(placeCannonStep);
+    }
+
+    private void ShowPlaceTargetInstruction()
+    {
+        if (distanceText != null)
+            distanceText.text = "";
+
+        if (heightText != null)
+            heightText.text = "";
+
+        if (horizontalDistanceText != null)
+            horizontalDistanceText.text = "";
+
+        if (instructionPanelController != null && placeTargetStep != null)
+            instructionPanelController.ShowStep(placeTargetStep);
+    }
+
+    private void ShowReadyInstruction()
+    {
+        if (instructionPanelController != null && readyStep != null)
+            instructionPanelController.ShowStep(readyStep);
+    }
+
+    private void ShowNoAttemptsInstruction()
+    {
+        if (instructionPanelController != null && noAttemptsStep != null)
+            instructionPanelController.ShowStep(noAttemptsStep);
     }
 
     public void NotifyCannonPlaced(GameObject cannonObject)
@@ -173,12 +321,27 @@ public class ARPhysicsLabController : MonoBehaviour
         if (cannonObject == null)
             return;
 
+        CancelNarrativeRoutines();
+
         cannonLauncher = cannonObject.GetComponentInChildren<CannonLauncher>();
 
-        ShowInstruction(waitingTargetMessage, false);
+        SetState(LabState.WaitingForTargetPlacement);
+    }
 
-        if (distanceText != null)
-            distanceText.text = "";
+    public void NotifyTargetPlaced(GameObject targetObject)
+    {
+        if (targetObject == null)
+            return;
+
+        CancelNarrativeRoutines();
+
+        appleTarget = targetObject.GetComponentInChildren<AppleTarget>();
+
+        CalculateDistances();
+        UpdateDistanceUI();
+        ConfigureKillZone();
+
+        SetState(LabState.ReadyToLaunch);
     }
 
     private void ConfigureKillZone()
@@ -196,99 +359,6 @@ public class ARPhysicsLabController : MonoBehaviour
         Vector3 targetPoint = appleTarget.transform.position;
 
         projectileKillZone.ConfigureFromPoints(launchPoint, targetPoint);
-    }
-
-    public void NotifyTargetPlaced(GameObject targetObject)
-    {
-        if (targetObject == null)
-            return;
-
-        appleTarget = targetObject.GetComponentInChildren<AppleTarget>();
-
-        CalculateDistances();
-        UpdateDistanceUI();
-        ConfigureKillZone();
-
-        ShowInstruction(readyMessage, true);
-    }
-
-    public void ShowLaunchInfo(string message)
-    {
-        ShowInstruction(message, true);
-    }
-
-    private void ShowInstruction(string message, bool autoHide)
-    {
-        if (instructionRoutine != null)
-            StopCoroutine(instructionRoutine);
-
-        instructionRoutine = StartCoroutine(ShowInstructionRoutine(message, autoHide));
-    }
-
-    private IEnumerator ShowInstructionRoutine(string message, bool autoHide)
-    {
-        if (instructionPanel != null)
-            instructionPanel.SetActive(true);
-
-        if (instructionText != null)
-            instructionText.text = message;
-
-        if (instructionCanvasGroup == null)
-            yield break;
-
-        instructionCanvasGroup.interactable = false;
-        instructionCanvasGroup.blocksRaycasts = false;
-
-        yield return new WaitForSeconds(showDelay);
-
-        yield return FadeInstruction(1f, fadeInDuration);
-
-        if (autoHide)
-        {
-            yield return new WaitForSeconds(readyMessageDuration);
-            yield return FadeInstruction(0f, fadeOutDuration);
-        }
-    }
-
-    public void HideInstructionPanel()
-    {
-        if (instructionRoutine != null)
-            StopCoroutine(instructionRoutine);
-
-        instructionRoutine = StartCoroutine(HideInstructionRoutine());
-    }
-
-    private IEnumerator HideInstructionRoutine()
-    {
-        if (instructionCanvasGroup != null)
-            yield return FadeInstruction(0f, fadeOutDuration);
-    }
-
-    private IEnumerator FadeInstruction(float targetAlpha, float duration)
-    {
-        if (instructionCanvasGroup == null)
-            yield break;
-
-        float startAlpha = instructionCanvasGroup.alpha;
-        float elapsed = 0f;
-
-        if (duration <= 0f)
-        {
-            instructionCanvasGroup.alpha = targetAlpha;
-            yield break;
-        }
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-
-            instructionCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, t);
-
-            yield return null;
-        }
-
-        instructionCanvasGroup.alpha = targetAlpha;
     }
 
     public void CalculateDistances()
@@ -324,12 +394,16 @@ public class ARPhysicsLabController : MonoBehaviour
 
     private void UpdateDistanceUI()
     {
-        if (distanceText == null)
-            return;
+        if (distanceText == null) return;
 
-        distanceText.text =
-            $"Distancia horizontal: {horizontalDistance:0.00} m\n" +
-            $"Altura objetivo: {heightDifference:0.00} m\n" +
-            $"Distancia recta: {straightDistance:0.00} m";
+        if (heightText == null) return;
+
+        if (horizontalDistanceText == null) return;
+
+        heightText.text = $"Altura: {heightDifference:0.00} m";
+
+        horizontalDistanceText.text = $"Horizontal: {horizontalDistance:0.00} m";
+
+        distanceText.text = $"Recta: {straightDistance:0.00} m";
     }
 }

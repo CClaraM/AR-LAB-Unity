@@ -46,12 +46,22 @@ public class ARPlacementManager : MonoBehaviour
     private GameObject spawnedCannon;
     private GameObject spawnedTarget;
 
+    private bool placementEnabled = true;
+
     private PlacementStep currentStep = PlacementStep.PlaceCannon;
 
     private static readonly List<ARRaycastHit> hits = new();
 
+    public void SetPlacementEnabled(bool enabled)
+    {
+        placementEnabled = enabled;
+    }
+
     private void Update()
     {
+        if (!placementEnabled)
+            return;
+
         if (currentStep == PlacementStep.Finished)
             return;
 

@@ -7,6 +7,9 @@ public class CannonUIController : MonoBehaviour
     [Header("Root Panel")]
     [SerializeField] private GameObject controlsRoot;
 
+    [Header("Attemps Panel")]
+    [SerializeField] private GameObject AttempsPanel;
+
     [Header("Lab Controller")]
     [SerializeField] private ARPhysicsLabController labController;
 
@@ -27,7 +30,7 @@ public class CannonUIController : MonoBehaviour
     [SerializeField] private Slider pitchSlider;
     [SerializeField] private TMP_InputField pitchInput;
     [SerializeField] private TMP_Text pitchText;
-    [SerializeField] private string pitchFormat = "Ángulo: {0:0}°";
+    [SerializeField] private string pitchFormat = "Ángulo: {0:0.0}°";
 
     private CannonLauncher currentLauncher;
     private CannonAimController currentAimController;
@@ -76,6 +79,8 @@ public class CannonUIController : MonoBehaviour
     {
         if (controlsRoot != null)
             controlsRoot.SetActive(visible);
+        if (AttempsPanel != null)
+            AttempsPanel.SetActive(visible);
 
         SetControlsInteractable(visible && currentLauncher != null && currentAimController != null);
     }
@@ -244,7 +249,7 @@ public class CannonUIController : MonoBehaviour
             pitchSlider.value = value;
 
         if (pitchInput != null)
-            pitchInput.text = value.ToString("0");
+            pitchInput.text = value.ToString("0.0");
 
         if (pitchText != null)
             pitchText.text = string.Format(pitchFormat, value);
