@@ -13,4 +13,6 @@ public class ExerciseData
 
     public bool showTrajectory;
     public int maxAttempts;
+
+    public string learnerId;
 }

@@ -5,6 +5,13 @@ using UnityEngine.UI;
 
 public class InstructionPanelController : MonoBehaviour
 {
+    public enum TemporaryRestoreMode
+    {
+        RestoreFullStep,
+        RestoreVisualOnly,
+        HideAfterTemporary
+    }
+
     [Header("References")]
     [SerializeField] private GameObject panelRoot;
     [SerializeField] private CanvasGroup canvasGroup;
@@ -27,6 +34,7 @@ public class InstructionPanelController : MonoBehaviour
     [SerializeField] private float fadeInDuration = 0.35f;
     [SerializeField] private float fadeOutDuration = 0.35f;
 
+    private InstructionStep currentPersistentStep;
     private Coroutine routine;
 
     private void Awake()
@@ -71,11 +79,31 @@ public class InstructionPanelController : MonoBehaviour
             return;
         }
 
+        currentPersistentStep = step; // Conservar es estado
+
         if (routine != null)
             StopCoroutine(routine);
 
         routine = StartCoroutine(ShowStepRoutine(step));
     }
+
+    public void ShowTemporaryStep(
+    InstructionStep temporaryStep,
+    TemporaryRestoreMode restoreMode = TemporaryRestoreMode.RestoreVisualOnly
+)
+    {
+        if (temporaryStep == null)
+        {
+            Debug.LogWarning("Temporary InstructionStep es null.");
+            return;
+        }
+
+        if (routine != null)
+            StopCoroutine(routine);
+
+        routine = StartCoroutine(ShowTemporaryStepRoutine(temporaryStep, restoreMode));
+    }
+
 
     public void Hide()
     {
@@ -159,6 +187,67 @@ public class InstructionPanelController : MonoBehaviour
                 instructionText.text = block.text;
 
             yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, block.duration));
+        }
+    }
+
+    private IEnumerator ShowTemporaryStepRoutine(
+    InstructionStep temporaryStep,
+    TemporaryRestoreMode restoreMode
+)
+    {
+        yield return ShowStepRoutine(temporaryStep);
+
+        switch (restoreMode)
+        {
+            case TemporaryRestoreMode.RestoreFullStep:
+                if (currentPersistentStep != null)
+                {
+                    routine = StartCoroutine(ShowStepRoutine(currentPersistentStep));
+                }
+                break;
+
+            case TemporaryRestoreMode.RestoreVisualOnly:
+                if (currentPersistentStep != null)
+                {
+                    ApplyStepVisualOnly(currentPersistentStep);
+                }
+                break;
+
+            case TemporaryRestoreMode.HideAfterTemporary:
+                yield return HideRoutine();
+                break;
+        }
+    }
+
+    private void ApplyStepVisualOnly(InstructionStep step)
+    {
+        if (step == null)
+            return;
+
+        if (panelRoot != null)
+            panelRoot.SetActive(true);
+
+        ApplyDragon(step);
+        ApplyMessageLayout(step);
+        ApplyMessageBackground(step);
+        ApplyTextLayout(step);
+
+        if (instructionText != null)
+        {
+            if (step.HasTextBlocks() && step.textBlocks[0] != null)
+                instructionText.text = step.textBlocks[0].text;
+            else
+                instructionText.text = step.message;
+        }
+
+        if (audioSource != null)
+            audioSource.Stop();
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
         }
     }
 

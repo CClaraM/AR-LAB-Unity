@@ -70,7 +70,7 @@ Material:
     - _PlaneOpacity: 0.5
     - _QueueControl: 1
     - _QueueOffset: 0
-    - _ShadowAlpha: 0.85
+    - _ShadowAlpha: 0.642
     - _Shadow_Alpha: 1
     - _TextureScale: 4
     m_Colors:

@@ -101,4 +101,30 @@ public class CannonAimController : MonoBehaviour
             pitchPivot.localRotation = Quaternion.Euler(-currentPitch, 0f, 0f);
         }
     }
+
+    public void AimYawAtWorldPoint(Vector3 worldTarget)
+    {
+        if (yawPivot == null)
+        {
+            Debug.LogWarning("No se puede orientar yaw: yawPivot no está asignado.");
+            return;
+        }
+
+        Vector3 direction = worldTarget - yawPivot.position;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude < 0.0001f)
+            return;
+
+        Vector3 localDirection;
+
+        if (yawPivot.parent != null)
+            localDirection = yawPivot.parent.InverseTransformDirection(direction.normalized);
+        else
+            localDirection = direction.normalized;
+
+        float yawDegrees = Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg;
+
+        SetYaw(yawDegrees);
+    }
 }

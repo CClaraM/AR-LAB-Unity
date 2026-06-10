@@ -247,6 +247,11 @@ MonoBehaviour:
   trajectoryPreview: {fileID: 1910341591}
   rotateCannonTowardTarget: 1
   rotateTargetTowardCannon: 1
+  validateTargetDistance: 1
+  minimumTargetDistance: 1
+  useHorizontalDistanceForValidation: 1
+  minimumDistanceIndicatorPrefab: {fileID: -1767835462610976475, guid: 19814df0c6cacb444a34ac3180cfdea4, type: 3}
+  minimumDistanceVisualAdjustment: -0.1
   cannonRotationOffset: {x: 0, y: 0, z: 0}
   targetRotationOffset: {x: 0, y: 0, z: 0}
   hidePlanesAfterEachPlacement: 1
@@ -2109,6 +2114,160 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 421988217}
   m_CullTransparentMesh: 1
+--- !u!1 &447860613
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 447860616}
+  - component: {fileID: 447860615}
+  - component: {fileID: 447860614}
+  m_Layer: 0
+  m_Name: ARJukebox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &447860614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447860613}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ca09977387093844b30febb6f1ca007, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ARJukebox
+  songs:
+  - {fileID: 8300000, guid: 1f2d454c53608554d9129620b4877c55, type: 3}
+  playRandom: 1
+  avoidImmediateRepeat: 1
+  volume: 0.531
+  playOnStart: 0
+  loopSingleSongIfOnlyOne: 1
+  useFadeIn: 1
+  fadeInDuration: 1.5
+  useFadeOut: 1
+  fadeOutDuration: 0.75
+  showDebugLogs: 0
+--- !u!82 &447860615
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447860613}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!4 &447860616
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447860613}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.82033, y: -0, z: -1.43885}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &487324546
 GameObject:
   m_ObjectHideFlags: 0
@@ -2340,6 +2499,7 @@ MonoBehaviour:
   startupFadeOutDuration: 1.5
   placementManager: {fileID: 81354898}
   allowPlacementDuringIntro: 1
+  arJukebox: {fileID: 447860614}
   instructionPanelController: {fileID: 318228646}
   introStep:
     message: 
@@ -2476,27 +2636,187 @@ MonoBehaviour:
   noAttemptsStep:
     message: 
     textBlocks:
-    - text: "Has usado todos tus intentos.\nEl ejercicio finaliz\xF3 sin resolver
-        el reto."
-      duration: 6.5
+    - text: 'Has usado todos
+
+        tus intentos.'
+      duration: 3
+    - text: "El ejercicio finaliz\xF3\nsin resolver el reto."
+      duration: 3.5
     dragonSprite: {fileID: 21300000, guid: 7694660a747fe4740a6e5bcdcf6ad96d, type: 3}
     audioClip: {fileID: 8300000, guid: f25c6eaf872005345830dbba1cdcb54d, type: 3}
     dragonAnchoredPosition: {x: -260, y: -40}
-    dragonSize: {x: 200, y: 250}
+    dragonSize: {x: 348, y: 498.5}
+    dragonRotationZ: 0
+    dragonMirrorHorizontal: 0
+    dragonMirrorVertical: 0
+    messageAnchoredPosition: {x: 170, y: 195}
+    messageSize: {x: 566, y: 332}
+    messageRotationZ: 0
+    messageBackgroundSprite: {fileID: 21300000, guid: a0ab584ca1b776244953f6a24d42f8a3, type: 3}
+    messageMirrorHorizontal: 1
+    messageMirrorVertical: 1
+    backgroundAnchoredPosition: {x: 0, y: 0}
+    backgroundSize: {x: 645, y: 380}
+    textAnchoredPosition: {x: -5, y: 15}
+    textSize: {x: 645, y: 380}
+    textFontSize: 42
+    showDelay: 0.25
+    visibleDuration: 3
+    autoHide: 1
+  targetTooCloseStep:
+    message: 
+    textBlocks:
+    - text: "\xA1Ups!\nEl objetivo est\xE1 demasiado\ncerca del ca\xF1\xF3n."
+      duration: 4
+    - text: "Ubica la isla del objetivo\nfuera del \xE1rea del ca\xF1\xF3n."
+      duration: 3.9
+    dragonSprite: {fileID: 21300000, guid: 4c3433ad638f7014bb471d6b1764c3d3, type: 3}
+    audioClip: {fileID: 8300000, guid: 2fa6ee9dc7cc6084dbc7dc8b015f99f9, type: 3}
+    dragonAnchoredPosition: {x: 260, y: 110}
+    dragonSize: {x: 431, y: 576}
     dragonRotationZ: 0
     dragonMirrorHorizontal: 0
     dragonMirrorVertical: 0
     messageAnchoredPosition: {x: -170, y: 0}
-    messageSize: {x: 520, y: 180}
+    messageSize: {x: 566, y: 332}
     messageRotationZ: 0
-    messageBackgroundSprite: {fileID: 0}
+    messageBackgroundSprite: {fileID: 21300000, guid: a0ab584ca1b776244953f6a24d42f8a3, type: 3}
     messageMirrorHorizontal: 0
     messageMirrorVertical: 0
     backgroundAnchoredPosition: {x: 0, y: 0}
-    backgroundSize: {x: 520, y: 180}
+    backgroundSize: {x: 645, y: 380}
+    textAnchoredPosition: {x: -7, y: -10}
+    textSize: {x: 645, y: 380}
+    textFontSize: 42
+    showDelay: 0.25
+    visibleDuration: 3
+    autoHide: 1
+  missedTargetStep:
+    message: 
+    textBlocks:
+    - text: "\xA1Oh! El proyectil\nno dio en el blanco."
+      duration: 4.3
+    - text: "No te preocupes.\nCon un peque\xF1o cambio,"
+      duration: 3.8
+    - text: "puedes acercarte mucho\nm\xE1s al objetivo."
+      duration: 3.4
+    dragonSprite: {fileID: 21300000, guid: bff6589e8c5233346b9cd0a530dd42a8, type: 3}
+    audioClip: {fileID: 8300000, guid: e909cd71a46a3e84f97be73e15acaa9c, type: 3}
+    dragonAnchoredPosition: {x: 260, y: 110}
+    dragonSize: {x: 315, y: 499.5}
+    dragonRotationZ: 0
+    dragonMirrorHorizontal: 0
+    dragonMirrorVertical: 0
+    messageAnchoredPosition: {x: -170, y: 0}
+    messageSize: {x: 566, y: 332}
+    messageRotationZ: 0
+    messageBackgroundSprite: {fileID: 21300000, guid: a0ab584ca1b776244953f6a24d42f8a3, type: 3}
+    messageMirrorHorizontal: 0
+    messageMirrorVertical: 0
+    backgroundAnchoredPosition: {x: 0, y: 0}
+    backgroundSize: {x: 645, y: 380}
+    textAnchoredPosition: {x: -7, y: -10}
+    textSize: {x: 645, y: 380}
+    textFontSize: 42
+    showDelay: 0.25
+    visibleDuration: 3
+    autoHide: 1
+  outOfBoundsStep:
+    message: 
+    textBlocks:
+    - text: "\xA1Cuidado! El proyectil\nsali\xF3 del \xE1rea del objetivo."
+      duration: 4.5
+    - text: "Revisa la f\xF3rmula,\nluego ajusta la\nvelocidad o el \xE1ngulo\npara
+        intentarlo de nuevo."
+      duration: 7.2
+    dragonSprite: {fileID: 21300000, guid: 4c3433ad638f7014bb471d6b1764c3d3, type: 3}
+    audioClip: {fileID: 8300000, guid: d64b6889a8f968847a5ce5cb63490de1, type: 3}
+    dragonAnchoredPosition: {x: 260, y: 110}
+    dragonSize: {x: 431, y: 576.5}
+    dragonRotationZ: 0
+    dragonMirrorHorizontal: 0
+    dragonMirrorVertical: 0
+    messageAnchoredPosition: {x: -170, y: 0}
+    messageSize: {x: 566, y: 332}
+    messageRotationZ: 0
+    messageBackgroundSprite: {fileID: 21300000, guid: a0ab584ca1b776244953f6a24d42f8a3, type: 3}
+    messageMirrorHorizontal: 0
+    messageMirrorVertical: 0
+    backgroundAnchoredPosition: {x: 0, y: 0}
+    backgroundSize: {x: 645, y: 380}
+    textAnchoredPosition: {x: -5, y: -5}
+    textSize: {x: 645, y: 380}
+    textFontSize: 42
+    showDelay: 0.25
+    visibleDuration: 3
+    autoHide: 1
+  hitTargetStep:
+    message: 
+    textBlocks:
+    - text: "\xA1Diste en el blanco!"
+      duration: 1.8
+    - text: "Eso significa\nque realizaste muy bien\ntus c\xE1lculos de velocidad,\n\xE1ngulo
+        y distancia."
+      duration: 6.7
+    - text: "Has completado el\nobjetivo del laboratorio.\nMe alegra mucho haberte\nacompa\xF1ado."
+      duration: 6
+    - text: " \xA1Hasta la pr\xF3xima\naventura cient\xEDfica!"
+      duration: 3.5
+    dragonSprite: {fileID: 21300000, guid: bdacd82608ae9ed49be9472e047f6470, type: 3}
+    audioClip: {fileID: 8300000, guid: 596cf5488c498354fb88528505e50b63, type: 3}
+    dragonAnchoredPosition: {x: 260, y: 110}
+    dragonSize: {x: 465.5, y: 571.5}
+    dragonRotationZ: 0
+    dragonMirrorHorizontal: 0
+    dragonMirrorVertical: 0
+    messageAnchoredPosition: {x: -170, y: 0}
+    messageSize: {x: 566, y: 332}
+    messageRotationZ: 0
+    messageBackgroundSprite: {fileID: 21300000, guid: a0ab584ca1b776244953f6a24d42f8a3, type: 3}
+    messageMirrorHorizontal: 0
+    messageMirrorVertical: 0
+    backgroundAnchoredPosition: {x: 0, y: 0}
+    backgroundSize: {x: 645, y: 380}
+    textAnchoredPosition: {x: -7, y: -10}
+    textSize: {x: 645, y: 380}
+    textFontSize: 42
+    showDelay: 0.25
+    visibleDuration: 3
+    autoHide: 1
+  resetIslandsStep:
+    message: 
+    textBlocks:
+    - text: 'Vamos a reorganizar
+
+        el laboratorio.'
+      duration: 3
+    - text: 'Como se removeran las
+
+        posiciones, debes volver
+
+        a ubicar
+        las islas.'
+      duration: 5
+    - text: "As\xED podremos comenzar\nel reto nuevamente."
+      duration: 3.2
+    dragonSprite: {fileID: 21300000, guid: f56138223b86086469f7a042aafa606f, type: 3}
+    audioClip: {fileID: 8300000, guid: f241f10d6c58e3042bed94fd0d71e55e, type: 3}
+    dragonAnchoredPosition: {x: 260, y: 110}
+    dragonSize: {x: 384.5, y: 506}
+    dragonRotationZ: 0
+    dragonMirrorHorizontal: 0
+    dragonMirrorVertical: 0
+    messageAnchoredPosition: {x: -170, y: 0}
+    messageSize: {x: 566, y: 332}
+    messageRotationZ: 0
+    messageBackgroundSprite: {fileID: 21300000, guid: a0ab584ca1b776244953f6a24d42f8a3, type: 3}
+    messageMirrorHorizontal: 0
+    messageMirrorVertical: 0
+    backgroundAnchoredPosition: {x: 0, y: 0}
+    backgroundSize: {x: 645, y: 380}
     textAnchoredPosition: {x: 0, y: 0}
-    textSize: {x: 460, y: 130}
-    textFontSize: 32
+    textSize: {x: 645, y: 380}
+    textFontSize: 42
     showDelay: 0.25
     visibleDuration: 3
     autoHide: 1
@@ -2504,6 +2824,10 @@ MonoBehaviour:
   heightText: {fileID: 162936389}
   horizontalDistanceText: {fileID: 1182083252}
   projectileKillZone: {fileID: 1546513617}
+  impactMeasurementVisualizer: {fileID: 1990113379}
+  currentShotPower: 0
+  currentShotAngle: 0
+  hasCurrentShotData: 0
 --- !u!4 &554365396
 Transform:
   m_ObjectHideFlags: 0
@@ -5932,6 +6256,7 @@ GameObject:
   - component: {fileID: 1546513619}
   - component: {fileID: 1546513618}
   - component: {fileID: 1546513617}
+  - component: {fileID: 1546513620}
   m_Layer: 0
   m_Name: ProjectileKillZone
   m_TagString: Untagged
@@ -5969,7 +6294,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -5990,6 +6315,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1546513620
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1546513616}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: -4234473462164445276, guid: 59708bf4c706426488b8f8162e6e778e, type: 3}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &1566577944
 GameObject:
   m_ObjectHideFlags: 0
@@ -7021,7 +7395,7 @@ MonoBehaviour:
   landscapeRightRotation: 90
   portraitExtraOffset: {x: 0, y: 0}
   portraitUpsideDownExtraOffset: {x: 0, y: 0}
-  landscapeLeftExtraOffset: {x: 300, y: 800}
+  landscapeLeftExtraOffset: {x: 320, y: 2020}
   landscapeRightExtraOffset: {x: 0, y: 0}
 --- !u!225 &1801642331
 CanvasGroup:
@@ -7910,7 +8284,7 @@ LineRenderer:
   - {x: 0, y: 0, z: 1}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.0015
+    widthMultiplier: 0.0025
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -8252,6 +8626,172 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1964602097}
   m_CullTransparentMesh: 1
+--- !u!1 &1990113378
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1990113381}
+  - component: {fileID: 1990113380}
+  - component: {fileID: 1990113379}
+  m_Layer: 0
+  m_Name: ImpactMeasurementVisualizer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1990113379
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1990113378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48106f4df0fe9bb468b8864aa6979cb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ImpactMeasurementVisualizer
+  impactMarkerPrefab: {fileID: 1578768444691612283, guid: 354a45a5a5a2c0341a57e15b8a144b16, type: 3}
+  targetMarkerPrefab: {fileID: 7260700110805376133, guid: 56db706410cab1d4b9c9a88028314bad, type: 3}
+  distanceLabelPrefab: {fileID: 4723803570960224320, guid: 0970056a1e2694e43837d7807ad79786, type: 3}
+  lineRenderer: {fileID: 1990113380}
+  distanceLabelBackgroundSprite: {fileID: 0}
+  labelOffsetFromImpact: {x: 0, y: 0, z: 0}
+  placeLabelAtMiddleOfLine: 1
+  labelOffsetFromMiddle: {x: 0, y: 0, z: 0}
+  markerLifetime: 8
+  markerYOffset: 0
+  hideLineOnStart: 1
+--- !u!120 &1990113380
+LineRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1990113378}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 02e33d2ec5330414d962c2f2aea9fd20, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Positions:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 1}
+  m_Parameters:
+    serializedVersion: 3
+    widthMultiplier: 0.01
+    widthCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    colorGradient:
+      serializedVersion: 2
+      key0: {r: 1, g: 1, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 1}
+      key2: {r: 0, g: 0, b: 0, a: 0}
+      key3: {r: 0, g: 0, b: 0, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 0
+      ctime1: 65535
+      ctime2: 0
+      ctime3: 0
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 65535
+      atime2: 0
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_ColorSpace: -1
+      m_NumColorKeys: 2
+      m_NumAlphaKeys: 2
+    numCornerVertices: 0
+    numCapVertices: 0
+    alignment: 0
+    textureMode: 0
+    textureScale: {x: 1, y: 1}
+    shadowBias: 0.5
+    generateLightingData: 0
+  m_UseWorldSpace: 1
+  m_Loop: 0
+  m_ApplyActiveColorSpace: 1
+--- !u!4 &1990113381
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1990113378}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2009645589
 GameObject:
   m_ObjectHideFlags: 0
@@ -8802,8 +9342,10 @@ SceneRoots:
   - {fileID: 81354897}
   - {fileID: 1375737373}
   - {fileID: 773190232}
-  - {fileID: 1910341593}
   - {fileID: 1409508090}
   - {fileID: 554365396}
   - {fileID: 1546513619}
   - {fileID: 730769972}
+  - {fileID: 1910341593}
+  - {fileID: 1990113381}
+  - {fileID: 447860616}

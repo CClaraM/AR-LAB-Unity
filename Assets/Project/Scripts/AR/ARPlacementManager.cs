@@ -33,6 +33,16 @@ public class ARPlacementManager : MonoBehaviour
     [SerializeField] private bool rotateCannonTowardTarget = true;
     [SerializeField] private bool rotateTargetTowardCannon = true;
 
+
+    [Header("Placement Validation")]
+    [SerializeField] private bool validateTargetDistance = true;
+    [SerializeField] private float minimumTargetDistance = 0.6f;
+    [SerializeField] private bool useHorizontalDistanceForValidation = true;
+
+    [Header("Minimum Distance Visual")]
+    [SerializeField] private PlacementDistanceIndicator minimumDistanceIndicatorPrefab;
+    [SerializeField] private float minimumDistanceVisualAdjustment = -0.1f;
+
     [Tooltip("Usa esto si el modelo del cañón no apunta con su eje Z+ hacia adelante.")]
     [SerializeField] private Vector3 cannonRotationOffset = Vector3.zero;
 
@@ -47,6 +57,8 @@ public class ARPlacementManager : MonoBehaviour
     private GameObject spawnedTarget;
 
     private bool placementEnabled = true;
+
+    private PlacementDistanceIndicator minimumDistanceIndicatorInstance;
 
     private PlacementStep currentStep = PlacementStep.PlaceCannon;
 
@@ -133,6 +145,8 @@ public class ARPlacementManager : MonoBehaviour
             cannonUIController.ShowControls(false);
         }
 
+        CreateOrShowMinimumDistanceIndicator();
+
         Debug.Log("Cañón colocado. Ahora toca otro punto para colocar el target.");
     }
 
@@ -144,10 +158,32 @@ public class ARPlacementManager : MonoBehaviour
             return;
         }
 
+        if (!CanPlaceTargetAt(pose.position))
+        {
+            Debug.LogWarning("Target demasiado cerca del cañón. Elige un punto más lejano.");
+
+            if (minimumDistanceIndicatorInstance != null)
+                minimumDistanceIndicatorInstance.SetValidState(false);
+
+            if (labController != null)
+            {
+                labController.ShowTargetTooCloseInstruction();
+            }
+
+            return;
+        }
+
         spawnedTarget = Instantiate(targetPrefab, pose.position, pose.rotation);
         spawnedTarget.transform.rotation *= Quaternion.Euler(targetRotationOffset);
 
         OrientObjects();
+        AimCannonAtApple();
+
+        if (minimumDistanceIndicatorInstance != null)
+        {
+            minimumDistanceIndicatorInstance.SetValidState(true);
+            minimumDistanceIndicatorInstance.Show(false);
+        }
 
         if (labController != null)
         {
@@ -168,6 +204,33 @@ public class ARPlacementManager : MonoBehaviour
             StopPlaneDetection();
 
         Debug.Log("Target colocado. Detección de planos detenida.");
+    }
+
+    private bool CanPlaceTargetAt(Vector3 targetPosition)
+    {
+        if (!validateTargetDistance)
+            return true;
+
+        if (spawnedCannon == null)
+            return true;
+
+        Vector3 cannonPosition = spawnedCannon.transform.position;
+
+        float distance;
+
+        if (useHorizontalDistanceForValidation)
+        {
+            Vector3 flatCannon = new Vector3(cannonPosition.x, 0f, cannonPosition.z);
+            Vector3 flatTarget = new Vector3(targetPosition.x, 0f, targetPosition.z);
+
+            distance = Vector3.Distance(flatCannon, flatTarget);
+        }
+        else
+        {
+            distance = Vector3.Distance(cannonPosition, targetPosition);
+        }
+
+        return distance >= minimumTargetDistance;
     }
 
     private void OrientObjects()
@@ -203,6 +266,32 @@ public class ARPlacementManager : MonoBehaviour
                     * Quaternion.Euler(targetRotationOffset);
             }
         }
+    }
+
+    private void AimCannonAtApple()
+    {
+        if (spawnedCannon == null || spawnedTarget == null)
+            return;
+
+        CannonAimController aimController =
+            spawnedCannon.GetComponentInChildren<CannonAimController>();
+
+        if (aimController == null)
+        {
+            Debug.LogWarning("No se encontró CannonAimController en el cañón.");
+            return;
+        }
+
+        AppleTarget appleTarget =
+            spawnedTarget.GetComponentInChildren<AppleTarget>();
+
+        Vector3 targetPoint = appleTarget != null
+            ? appleTarget.transform.position
+            : spawnedTarget.transform.position;
+
+        aimController.AimYawAtWorldPoint(targetPoint);
+
+        Debug.Log("Cañón orientado hacia la manzana.");
     }
 
     private void SetPlaneVisualsVisible(bool visible)
@@ -246,6 +335,23 @@ public class ARPlacementManager : MonoBehaviour
         }
 
         SetPlaneVisualsVisible(false);
+        SetPlaneCollidersEnabled(false);
+    }
+
+    private void SetPlaneCollidersEnabled(bool enabled)
+    {
+        if (planeManager == null)
+            return;
+
+        foreach (ARPlane plane in planeManager.trackables)
+        {
+            Collider[] colliders = plane.GetComponentsInChildren<Collider>(true);
+
+            foreach (Collider collider in colliders)
+            {
+                collider.enabled = enabled;
+            }
+        }
     }
 
     private bool IsPointerOverUI()
@@ -281,5 +387,30 @@ public class ARPlacementManager : MonoBehaviour
         }
 
         SetPlaneVisualsVisible(true);
+        SetPlaneCollidersEnabled(true);
+    }
+
+    private float GetMinimumDistanceVisualRadius()
+    {
+        return Mathf.Max(
+            0.05f,
+            minimumTargetDistance + minimumDistanceVisualAdjustment
+        );
+    }
+
+    private void CreateOrShowMinimumDistanceIndicator()
+    {
+        if (minimumDistanceIndicatorPrefab == null || spawnedCannon == null)
+            return;
+
+        if (minimumDistanceIndicatorInstance == null)
+        {
+            minimumDistanceIndicatorInstance = Instantiate(minimumDistanceIndicatorPrefab);
+        }
+
+        minimumDistanceIndicatorInstance.Setup(
+            spawnedCannon.transform,
+            GetMinimumDistanceVisualRadius()
+        );
     }
 }

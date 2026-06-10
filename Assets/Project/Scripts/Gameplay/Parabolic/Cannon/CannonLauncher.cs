@@ -17,10 +17,26 @@ public class CannonLauncher : MonoBehaviour
     [SerializeField] private float slowMotionScale = 0.35f;
     [SerializeField] private float slowMotionDuration = 2.5f;
 
+    [Header("Lab References")]
+    [SerializeField] private ARPhysicsLabController labController;
+    [SerializeField] private AppleTarget appleTarget;
+    [SerializeField] private CannonAimController aimController;
+
     public float LaunchPower
     {
         get => launchPower;
         set => launchPower = Mathf.Max(0f, value);
+    }
+
+    public void SetLabReferences(
+    ARPhysicsLabController lab,
+    AppleTarget target,
+    CannonAimController aim
+)
+    {
+        labController = lab;
+        appleTarget = target;
+        aimController = aim;
     }
 
     public Transform FirePoint => firePoint;
@@ -45,6 +61,19 @@ public class CannonLauncher : MonoBehaviour
             firePoint.position,
             firePoint.rotation
         );
+
+        ProjectileImpactReporter reporter =
+            projectile.GetComponent<ProjectileImpactReporter>();
+
+        if (reporter != null)
+        {
+            reporter.Initialize(
+                labController,
+                appleTarget,
+                this,
+                aimController
+            );
+        }
 
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
 

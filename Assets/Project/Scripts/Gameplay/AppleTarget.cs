@@ -10,7 +10,6 @@ public class AppleTarget : MonoBehaviour
     [SerializeField] private float soundVolume = 1f;
 
     [Header("Behaviour")]
-    [SerializeField] private bool destroyProjectileOnHit = true;
     [SerializeField] private bool destroyTargetOnHit = true;
     [SerializeField] private float destroyDelay = 0.05f;
 
@@ -66,11 +65,6 @@ public class AppleTarget : MonoBehaviour
         if (hitSound != null)
         {
             AudioSource.PlayClipAtPoint(hitSound, transform.position, soundVolume);
-        }
-
-        if (destroyProjectileOnHit && projectile != null)
-        {
-            Destroy(projectile);
         }
 
         if (destroyTargetOnHit)

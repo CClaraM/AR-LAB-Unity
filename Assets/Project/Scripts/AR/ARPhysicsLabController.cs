@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using static InstructionPanelController;
 
 public class ARPhysicsLabController : MonoBehaviour
 {
@@ -19,11 +20,6 @@ public class ARPhysicsLabController : MonoBehaviour
     [SerializeField] private int defaultMaxAttempts = 3;
     [SerializeField] private AttemptsDisplayUI attemptsDisplayUI;
 
-    private int maxAttempts;
-    private int remainingAttempts;
-    private int usedAttempts;
-    private bool labLocked;
-
     [Header("Startup Loading")]
     [SerializeField] private GameObject startupPanel;
     [SerializeField] private CanvasGroup startupCanvasGroup;
@@ -34,6 +30,8 @@ public class ARPhysicsLabController : MonoBehaviour
     [SerializeField] private ARPlacementManager placementManager;
     [SerializeField] private bool allowPlacementDuringIntro = false;
 
+    [Header("Audio")]
+    [SerializeField] private ARJukebox arJukebox;
 
     [Header("Instruction System")]
     [SerializeField] private InstructionPanelController instructionPanelController;
@@ -44,6 +42,13 @@ public class ARPhysicsLabController : MonoBehaviour
     [SerializeField] private InstructionStep readyStep;
     [SerializeField] private InstructionStep noAttemptsStep;
 
+    [Header("Temporary Instruction Steps")]
+    [SerializeField] private InstructionStep targetTooCloseStep;
+    [SerializeField] private InstructionStep missedTargetStep;
+    [SerializeField] private InstructionStep outOfBoundsStep;
+    [SerializeField] private InstructionStep hitTargetStep;
+    [SerializeField] private InstructionStep resetIslandsStep;
+
     [Header("Exercise UI")]
     [SerializeField] private TMP_Text distanceText;
     [SerializeField] private TMP_Text heightText;
@@ -51,6 +56,24 @@ public class ARPhysicsLabController : MonoBehaviour
 
     [Header("Projectile Safety")]
     [SerializeField] private ProjectileKillZone projectileKillZone;
+
+    [Header("Impact Visualization")]
+    [SerializeField] private ImpactMeasurementVisualizer impactMeasurementVisualizer;
+
+    [Header("Runtime Attempt Data")]
+    [SerializeField] private float currentShotPower;
+    [SerializeField] private float currentShotAngle;
+    [SerializeField] private bool hasCurrentShotData;
+
+    private readonly System.Collections.Generic.List<LabAttemptResult> attemptResults =
+    new System.Collections.Generic.List<LabAttemptResult>();
+
+    private bool finalHitTarget;
+
+    private int maxAttempts;
+    private int remainingAttempts;
+    private int usedAttempts;
+    private bool labLocked;
 
     private CannonLauncher cannonLauncher;
     private AppleTarget appleTarget;
@@ -62,6 +85,7 @@ public class ARPhysicsLabController : MonoBehaviour
     private LabState currentState;
     private Coroutine introRoutine;
 
+    private bool currentProjectileResultRegistered;
     public float HorizontalDistance => horizontalDistance;
     public float HeightDifference => heightDifference;
     public float StraightDistance => straightDistance;
@@ -116,6 +140,9 @@ public class ARPhysicsLabController : MonoBehaviour
 
     private void StartIntroFlow()
     {
+        if (arJukebox != null)
+            arJukebox.Play();
+
         CancelNarrativeRoutines();
 
         if (placementManager != null)
@@ -183,6 +210,59 @@ public class ARPhysicsLabController : MonoBehaviour
         }
     }
 
+    // Metodos publicos que muestran mensajes temporales segun el resultado del intento de disparo. Estos pueden ser llamados desde otros scripts como CannonProjectile al detectar colisiones o condiciones de impacto.
+    public void ShowTargetTooCloseInstruction()
+    {
+        if (instructionPanelController == null || targetTooCloseStep == null)
+            return;
+
+        instructionPanelController.ShowTemporaryStep(
+            targetTooCloseStep,
+            TemporaryRestoreMode.HideAfterTemporary //RestoreVisualOnly o RestoreFullStep
+        );
+    }
+
+    public void ShowMissedTargetInstruction()
+    {
+        if (instructionPanelController == null || missedTargetStep == null)
+            return;
+
+        instructionPanelController.ShowTemporaryStep(
+            missedTargetStep,
+            TemporaryRestoreMode.HideAfterTemporary
+        );
+    }
+
+    public void ShowOutOfBoundsInstruction()
+    {
+        if (instructionPanelController == null || outOfBoundsStep == null)
+            return;
+
+        instructionPanelController.ShowTemporaryStep(
+            outOfBoundsStep,
+            TemporaryRestoreMode.HideAfterTemporary
+        );
+    }
+
+    public void ShowHitTargetInstruction()
+    {
+        if (instructionPanelController == null || hitTargetStep == null)
+            return;
+
+        instructionPanelController.ShowTemporaryStep(
+            hitTargetStep,
+            TemporaryRestoreMode.HideAfterTemporary
+        );
+    }
+
+    public void ShowResetIslandsInstruction()
+    {
+        if (instructionPanelController == null || resetIslandsStep == null)
+            return;
+
+        instructionPanelController.ShowStep(resetIslandsStep);
+    }
+
     private void CancelNarrativeRoutines()
     {
         if (introRoutine != null)
@@ -238,10 +318,14 @@ public class ARPhysicsLabController : MonoBehaviour
             return false;
         }
 
+        CaptureCurrentShotData(launcher);
+
         bool fired = launcher.Fire();
 
         if (!fired)
             return false;
+
+        currentProjectileResultRegistered = false;
 
         usedAttempts++;
         remainingAttempts--;
@@ -258,6 +342,25 @@ public class ARPhysicsLabController : MonoBehaviour
         return true;
     }
 
+    private void CaptureCurrentShotData(CannonLauncher launcher)
+    {
+        currentShotPower = launcher != null ? launcher.CurrentLaunchPower : -1f;
+
+        CannonAimController aimController = launcher != null
+            ? launcher.GetComponentInChildren<CannonAimController>()
+            : null;
+
+        currentShotAngle = aimController != null ? aimController.CurrentPitch : -1f;
+
+        hasCurrentShotData = true;
+    }
+
+    private void ClearCurrentShotData()
+    {
+        currentShotPower = 0f;
+        currentShotAngle = 0f;
+        hasCurrentShotData = false;
+    }
     public bool CanFire()
     {
         return !labLocked &&
@@ -341,9 +444,73 @@ public class ARPhysicsLabController : MonoBehaviour
         UpdateDistanceUI();
         ConfigureKillZone();
 
+        CannonAimController aimController = cannonLauncher != null
+            ? cannonLauncher.GetComponentInChildren<CannonAimController>()
+            : null;
+
+        if (cannonLauncher != null)
+        {
+            cannonLauncher.SetLabReferences(
+                this,
+                appleTarget,
+                aimController
+            );
+        }
+
         SetState(LabState.ReadyToLaunch);
     }
 
+    public void NotifyProjectileImpact(ProjectileImpactData data)
+    {
+        if (data == null)
+            return;
+
+        if (currentProjectileResultRegistered)
+        {
+            Debug.LogWarning("Impacto ignorado: este proyectil ya registró un resultado.");
+            return;
+        }
+
+        if (currentState != LabState.ProjectileInFlight)
+        {
+            Debug.LogWarning($"Impacto ignorado: estado actual no válido ({currentState}).");
+            return;
+        }
+
+        currentProjectileResultRegistered = true;
+
+        RegisterAttemptResult(data);
+        ShowImpactMeasurementIfNeeded(data);
+        ClearCurrentShotData();
+
+        Debug.Log(
+            $"Impacto: {data.impactType} | " +
+            $"Distancia al target: {data.impactDistanceToTarget:0.00} m | " +
+            $"Horizontal: {data.impactHorizontalDistance:0.00} m | " +
+            $"Altura: {data.impactHeightDifference:0.00} m"
+        );
+
+        switch (data.impactType)
+        {
+            case ProjectileImpactType.HitTarget:
+                labLocked = true;
+                currentState = LabState.Completed;
+                ShowHitTargetInstruction();
+                break;
+
+            case ProjectileImpactType.MissedTarget:
+                currentState = LabState.AttemptResult;
+                ShowMissedTargetInstruction();
+                ReturnToReadyIfPossible();
+                break;
+
+            case ProjectileImpactType.OutOfBounds:
+                currentState = LabState.AttemptResult;
+                ShowOutOfBoundsInstruction();
+                ReturnToReadyIfPossible();
+                break;
+        }
+    }
     private void ConfigureKillZone()
     {
         if (projectileKillZone == null)
@@ -405,5 +572,92 @@ public class ARPhysicsLabController : MonoBehaviour
         horizontalDistanceText.text = $"Horizontal: {horizontalDistance:0.00} m";
 
         distanceText.text = $"Recta: {straightDistance:0.00} m";
+    }
+
+    private void ReturnToReadyIfPossible()
+    {
+        if (remainingAttempts <= 0)
+        {
+            labLocked = true;
+            ShowNoAttemptsInstruction();
+            currentState = LabState.Completed;
+            return;
+        }
+
+        currentState = LabState.ReadyToLaunch;
+    }
+
+    private void RegisterAttemptResult(ProjectileImpactData data)
+    {
+        bool isOutOfBounds = data.impactType == ProjectileImpactType.OutOfBounds;
+        bool isHit = data.impactType == ProjectileImpactType.HitTarget;
+
+        LabAttemptResult result = new LabAttemptResult
+        {
+            attempt = usedAttempts,
+            hit = isHit,
+
+            power = hasCurrentShotData ? currentShotPower : data.power,
+            angle = hasCurrentShotData ? currentShotAngle : data.angle,
+
+            impactDistanceToTarget = isOutOfBounds ? -1f : data.impactDistanceToTarget,
+            impactHorizontalDistance = isOutOfBounds ? -1f : data.impactHorizontalDistance,
+            impactHeightDifference = isOutOfBounds ? -1f : data.impactHeightDifference,
+
+            impactType = data.impactType.ToString(),
+
+            impactPoint = new Vector3Serializable(data.impactPoint),
+            targetPoint = new Vector3Serializable(data.targetPoint)
+        };
+
+        attemptResults.Add(result);
+
+        Debug.Log($"Intento agregado al JSON: {JsonUtility.ToJson(result)}");
+    }
+
+    private void ShowImpactMeasurementIfNeeded(ProjectileImpactData data)
+    {
+        if (impactMeasurementVisualizer == null)
+            return;
+
+        if (data.impactType == ProjectileImpactType.OutOfBounds)
+            return;
+
+        impactMeasurementVisualizer.ShowMeasurement(
+            data.impactPoint,
+            data.targetPoint,
+            data.impactDistanceToTarget,
+            data.impactHorizontalDistance,
+            data.impactHeightDifference
+        );
+    }
+
+    public string BuildFinalResultJson(bool completed)
+    {
+        LabFinalResult finalResult = new LabFinalResult
+        {
+            exerciseId = AndroidBridge.Instance != null &&
+                         AndroidBridge.Instance.CurrentExerciseData != null
+                ? AndroidBridge.Instance.CurrentExerciseData.exerciseId
+                : "",
+
+            apprenticeId = AndroidBridge.Instance != null &&
+                           AndroidBridge.Instance.CurrentExerciseData != null
+                ? AndroidBridge.Instance.CurrentExerciseData.learnerId
+                : "",
+
+            horizontalDistance = horizontalDistance,
+            verticalDistance = heightDifference,
+            straightDistance = straightDistance,
+
+            hitTarget = finalHitTarget,
+            maxAttempts = maxAttempts,
+            usedAttempts = usedAttempts,
+            completed = completed,
+
+            attempts = attemptResults.ToArray()
+        };
+
+        return JsonUtility.ToJson(finalResult, true);
     }
 }

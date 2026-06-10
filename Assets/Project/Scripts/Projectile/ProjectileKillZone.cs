@@ -41,11 +41,21 @@ public class ProjectileKillZone : MonoBehaviour
         if (projectileRoot == null)
             return;
 
-        Destroy(projectileRoot);
+        ProjectileImpactReporter reporter =
+        projectileRoot.GetComponent<ProjectileImpactReporter>();
 
-        if (TimeScaleController.Instance != null)
+        if (reporter != null)
         {
-            TimeScaleController.Instance.RestoreNormalTime();
+            reporter.ReportOutOfBounds();
+        }
+        else
+        {
+            Destroy(projectileRoot);
+
+            if (TimeScaleController.Instance != null)
+            {
+                TimeScaleController.Instance.RestoreNormalTime();
+            }
         }
 
         Debug.Log("Proyectil salió de la KillZone y fue destruido.");
