@@ -13,7 +13,8 @@ public class ARPhysicsLabController : MonoBehaviour
         ReadyToLaunch,
         ProjectileInFlight,
         AttemptResult,
-        Completed
+        Completed,
+        Results
     }
 
     [Header("Attempts")]
@@ -54,6 +55,9 @@ public class ARPhysicsLabController : MonoBehaviour
     [SerializeField] private TMP_Text heightText;
     [SerializeField] private TMP_Text horizontalDistanceText;
 
+    [Header("UI Controllers")]
+    [SerializeField] private CannonUIController cannonUIController;
+
     [Header("Projectile Safety")]
     [SerializeField] private ProjectileKillZone projectileKillZone;
 
@@ -65,15 +69,26 @@ public class ARPhysicsLabController : MonoBehaviour
     [SerializeField] private float currentShotAngle;
     [SerializeField] private bool hasCurrentShotData;
 
+    [Header("Final Results")]
+    [SerializeField] private LabUIFadeController labUIFadeController;
+    [SerializeField] private ARLabSceneCleaner arLabSceneCleaner;
+    [SerializeField] private LabResultsPanelController resultsPanelController;
+    [SerializeField] private float delayBeforeFinalPanel = 0.25f;
+
     private readonly System.Collections.Generic.List<LabAttemptResult> attemptResults =
     new System.Collections.Generic.List<LabAttemptResult>();
 
+    private Coroutine returnToReadyRoutine;
+
+
     private bool finalHitTarget;
+    private bool suppressNextReadyInstruction;
 
     private int maxAttempts;
     private int remainingAttempts;
     private int usedAttempts;
     private bool labLocked;
+    private bool finalSequenceStarted;
 
     private CannonLauncher cannonLauncher;
     private AppleTarget appleTarget;
@@ -153,7 +168,8 @@ public class ARPhysicsLabController : MonoBehaviour
 
     private IEnumerator IntroFlowRoutine()
     {
-        currentState = LabState.Intro;
+        //currentState = LabState.Intro;
+        SetState(LabState.Intro);
 
         if (instructionPanelController != null && introStep != null)
         {
@@ -174,6 +190,11 @@ public class ARPhysicsLabController : MonoBehaviour
 
         switch (currentState)
         {
+            case LabState.Intro:
+                if (placementManager != null)
+                    placementManager.SetPlacementEnabled(allowPlacementDuringIntro);
+                break;
+
             case LabState.WaitingForCannonPlacement:
                 if (placementManager != null)
                     placementManager.SetPlacementEnabled(true);
@@ -192,7 +213,12 @@ public class ARPhysicsLabController : MonoBehaviour
                 if (placementManager != null)
                     placementManager.SetPlacementEnabled(false);
 
-                ShowReadyInstruction();
+                if (!suppressNextReadyInstruction)
+                {
+                    ShowReadyInstruction();
+                }
+
+                suppressNextReadyInstruction = false;
                 break;
 
             case LabState.ProjectileInFlight:
@@ -207,7 +233,13 @@ public class ARPhysicsLabController : MonoBehaviour
                 if (placementManager != null)
                     placementManager.SetPlacementEnabled(false);
                 break;
+
+            case LabState.Results:
+                if (placementManager != null)
+                    placementManager.SetPlacementEnabled(false);
+                break;
         }
+        UpdateFireButtonState();
     }
 
     // Metodos publicos que muestran mensajes temporales segun el resultado del intento de disparo. Estos pueden ser llamados desde otros scripts como CannonProjectile al detectar colisiones o condiciones de impacto.
@@ -306,7 +338,7 @@ public class ARPhysicsLabController : MonoBehaviour
         if (remainingAttempts <= 0)
         {
             Debug.LogWarning("No quedan intentos.");
-            labLocked = true;
+            //labLocked = true;
             UpdateAttemptsUI();
             ShowNoAttemptsInstruction();
             return false;
@@ -329,15 +361,9 @@ public class ARPhysicsLabController : MonoBehaviour
 
         usedAttempts++;
         remainingAttempts--;
-
         UpdateAttemptsUI();
 
-        currentState = LabState.ProjectileInFlight;
-
-        if (remainingAttempts <= 0)
-        {
-            labLocked = true;
-        }
+        SetState(LabState.ProjectileInFlight);
 
         return true;
     }
@@ -364,7 +390,7 @@ public class ARPhysicsLabController : MonoBehaviour
     public bool CanFire()
     {
         return !labLocked &&
-               remainingAttempts > 0 &&
+               remainingAttempts > 0 && 
                currentState == LabState.ReadyToLaunch;
     }
 
@@ -493,21 +519,23 @@ public class ARPhysicsLabController : MonoBehaviour
         switch (data.impactType)
         {
             case ProjectileImpactType.HitTarget:
+                finalHitTarget = true;
                 labLocked = true;
-                currentState = LabState.Completed;
+                SetState(LabState.Completed);
                 ShowHitTargetInstruction();
+                StartFinalResultsSequence(hitTargetStep);
                 break;
 
             case ProjectileImpactType.MissedTarget:
-                currentState = LabState.AttemptResult;
+                SetState(LabState.AttemptResult);
                 ShowMissedTargetInstruction();
-                ReturnToReadyIfPossible();
+                StartReturnToReadyAfterTemporaryStep(missedTargetStep);
                 break;
 
             case ProjectileImpactType.OutOfBounds:
-                currentState = LabState.AttemptResult;
+                SetState(LabState.AttemptResult);
                 ShowOutOfBoundsInstruction();
-                ReturnToReadyIfPossible();
+                StartReturnToReadyAfterTemporaryStep(outOfBoundsStep);
                 break;
         }
     }
@@ -574,17 +602,19 @@ public class ARPhysicsLabController : MonoBehaviour
         distanceText.text = $"Recta: {straightDistance:0.00} m";
     }
 
-    private void ReturnToReadyIfPossible()
+    private void ReturnToReadyIfPossible(bool showReadyInstruction = true)
     {
         if (remainingAttempts <= 0)
         {
             labLocked = true;
+            SetState(LabState.Completed);
             ShowNoAttemptsInstruction();
-            currentState = LabState.Completed;
+            StartFinalResultsSequence(noAttemptsStep);
             return;
         }
 
-        currentState = LabState.ReadyToLaunch;
+        suppressNextReadyInstruction = !showReadyInstruction;
+        SetState(LabState.ReadyToLaunch);
     }
 
     private void RegisterAttemptResult(ProjectileImpactData data)
@@ -632,9 +662,9 @@ public class ARPhysicsLabController : MonoBehaviour
         );
     }
 
-    public string BuildFinalResultJson(bool completed)
+    private LabFinalResult BuildFinalResultObject(bool completed)
     {
-        LabFinalResult finalResult = new LabFinalResult
+        return new LabFinalResult
         {
             exerciseId = AndroidBridge.Instance != null &&
                          AndroidBridge.Instance.CurrentExerciseData != null
@@ -657,7 +687,84 @@ public class ARPhysicsLabController : MonoBehaviour
 
             attempts = attemptResults.ToArray()
         };
+    }
 
+    public string BuildFinalResultJson(bool completed)
+    {
+        LabFinalResult finalResult = BuildFinalResultObject(completed);
         return JsonUtility.ToJson(finalResult, true);
+    }
+
+    private void UpdateFireButtonState()
+    {
+        if (cannonUIController == null)
+            return;
+
+        cannonUIController.SetFireButtonInteractable(CanFire());
+    }
+
+    private void StartReturnToReadyAfterTemporaryStep(InstructionStep step)
+    {
+        if (returnToReadyRoutine != null)
+        {
+            StopCoroutine(returnToReadyRoutine);
+            returnToReadyRoutine = null;
+        }
+
+        returnToReadyRoutine = StartCoroutine(ReturnToReadyAfterTemporaryStepRoutine(step));
+    }
+
+    private IEnumerator ReturnToReadyAfterTemporaryStepRoutine(InstructionStep step)
+    {
+        float delay = 1.5f;
+
+        if (instructionPanelController != null && step != null)
+        {
+            delay = instructionPanelController.GetTotalStepDuration(step);
+        }
+
+        yield return new WaitForSecondsRealtime(delay + 0.05f);
+
+        returnToReadyRoutine = null;
+
+        ReturnToReadyIfPossible(false);
+    }
+
+    private void StartFinalResultsSequence(InstructionStep finalInstructionStep)
+    {
+        if (finalSequenceStarted)
+            return;
+
+        finalSequenceStarted = true;
+
+        StartCoroutine(FinalResultsSequenceRoutine(finalInstructionStep));
+    }
+
+    private IEnumerator FinalResultsSequenceRoutine(InstructionStep finalInstructionStep)
+    {
+        float instructionDuration = 0f;
+
+        if (instructionPanelController != null && finalInstructionStep != null)
+        {
+            instructionDuration = instructionPanelController.GetTotalStepDuration(finalInstructionStep);
+        }
+
+        yield return new WaitForSecondsRealtime(instructionDuration + 0.15f);
+
+        if (labUIFadeController != null)
+            labUIFadeController.HideGameplayUI();
+
+        yield return new WaitForSecondsRealtime(delayBeforeFinalPanel);
+
+        if (arLabSceneCleaner != null)
+            arLabSceneCleaner.CleanScene();
+
+        LabFinalResult finalResult = BuildFinalResultObject(true);
+        string json = JsonUtility.ToJson(finalResult, true);
+
+        SetState(LabState.Results);
+
+        if (resultsPanelController != null)
+            resultsPanelController.ShowResults(finalResult, json);
     }
 }

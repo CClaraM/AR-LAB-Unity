@@ -20,6 +20,9 @@ public class CannonUIController : MonoBehaviour
     [SerializeField] private Button upButton;
     [SerializeField] private Button downButton;
 
+    [Header("Fire Button Visual")]
+    [SerializeField] private LaunchButtonVisualState fireButtonVisualState;
+
     [Header("Power UI")]
     [SerializeField] private Slider powerSlider;
     [SerializeField] private TMP_InputField powerInput;
@@ -39,6 +42,8 @@ public class CannonUIController : MonoBehaviour
 
     private void Awake()
     {
+        AutoWireFireButtonVisual();
+
         ShowControls(false);
         RegisterUIEvents();
     }
@@ -95,23 +100,20 @@ public class CannonUIController : MonoBehaviour
 
         if (labController != null)
         {
-            bool fired = labController.TryFire(currentLauncher);
-
-            if (!fired)
-            {
-                SetFireButtonInteractable(false);
-            }
-
+            labController.TryFire(currentLauncher);
             return;
         }
 
         currentLauncher.Fire();
     }
 
-    public void SetFireButtonInteractable(bool value)
+    public void SetFireButtonInteractable(bool interactable)
     {
         if (fireButton != null)
-            fireButton.interactable = value;
+            fireButton.interactable = interactable;
+
+        if (fireButtonVisualState != null)
+            fireButtonVisualState.SetInteractableVisual(interactable);
     }
 
     public void RotateLeft()
@@ -270,9 +272,6 @@ public class CannonUIController : MonoBehaviour
 
     private void SetControlsInteractable(bool value)
     {
-        if (fireButton != null)
-            fireButton.interactable = value;
-
         if (leftButton != null)
             leftButton.interactable = value;
 
@@ -297,8 +296,12 @@ public class CannonUIController : MonoBehaviour
         if (pitchInput != null)
             pitchInput.interactable = value;
 
-        if (fireButton != null && labController != null)
-            fireButton.interactable = value && labController.CanFire();
+        bool fireInteractable = value;
+
+        if (labController != null)
+            fireInteractable = value && labController.CanFire();
+
+        SetFireButtonInteractable(fireInteractable);
     }
 
     public float GetCurrentPower()
@@ -320,5 +323,18 @@ public class CannonUIController : MonoBehaviour
         }
 
         AndroidBridge.Instance.FinishLabAndReturn();
+    }
+
+    private void AutoWireFireButtonVisual()
+    {
+        if (fireButtonVisualState == null && fireButton != null)
+        {
+            fireButtonVisualState = fireButton.GetComponent<LaunchButtonVisualState>();
+        }
+
+        if (fireButtonVisualState == null)
+        {
+            Debug.LogWarning("CannonUIController: falta asignar LaunchButtonVisualState.");
+        }
     }
 }
