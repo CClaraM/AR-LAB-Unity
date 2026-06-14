@@ -59,10 +59,11 @@ public class LabResultsPanelController : MonoBehaviour
         if (summaryText != null)
         {
             summaryText.text =
-                $"Intentos usados: {result.usedAttempts}/{result.maxAttempts}\n" +
-                $"Distancia horizontal: {result.horizontalDistance:0.00} m\n" +
-                $"Diferencia de altura: {result.verticalDistance:0.00} m\n" +
-                $"Distancia recta inicial: {result.straightDistance:0.00} m";
+                $"Resultados\n" +
+                $"  Intentos usados: {result.usedAttempts}/{result.maxAttempts}\n" +
+                $"  Distancia horizontal: {result.horizontalDistance:0.00} m\n" +
+                $"  Diferencia de altura: {result.verticalDistance:0.00} m\n" +
+                $"  Distancia recta inicial: {result.straightDistance:0.00} m";
         }
 
         if (result.attempts != null && attemptRowPrefab != null && attemptsContent != null)
@@ -72,6 +73,14 @@ public class LabResultsPanelController : MonoBehaviour
                 ResultAttemptRowUI row = Instantiate(attemptRowPrefab, attemptsContent);
                 row.Setup(attempt);
             }
+
+            Canvas.ForceUpdateCanvases();
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(
+                attemptsContent as RectTransform
+            );
+
+            Canvas.ForceUpdateCanvases();
         }
     }
 
@@ -103,4 +112,5 @@ public class LabResultsPanelController : MonoBehaviour
 
         AndroidBridge.Instance.FinishLabAndReturn();
     }
+
 }

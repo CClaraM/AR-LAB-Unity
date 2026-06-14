@@ -486,7 +486,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 75
   m_WholeNumbers: 0
-  m_Value: 0.01
+  m_Value: 0.1
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1160,7 +1160,7 @@ MonoBehaviour:
   m_FillRect: {fileID: 53066915}
   m_HandleRect: {fileID: 1094490349}
   m_Direction: 0
-  m_MinValue: 0.01
+  m_MinValue: 0.1
   m_MaxValue: 20
   m_WholeNumbers: 0
   m_Value: 0.1
@@ -1422,11 +1422,6 @@ MonoBehaviour:
   muteRect: {fileID: 0}
   audioMuted: 0
   allowSkip: 1
-  skipButtonRoot: {fileID: 532315494}
-  skipButton: {fileID: 532315497}
-  normalInstructionVolume: 1
-  mutedInstructionVolume: 0
-  muteFadeDuration: 0.35
   fadeInDuration: 0.35
   fadeOutDuration: 0.35
 --- !u!1 &326727825
@@ -2529,8 +2524,13 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 1f2d454c53608554d9129620b4877c55, type: 3}
   playRandom: 1
   avoidImmediateRepeat: 1
+  volume: 0.531
   playOnStart: 0
   loopSingleSongIfOnlyOne: 1
+  useFadeIn: 1
+  fadeInDuration: 1.5
+  useFadeOut: 1
+  fadeOutDuration: 0.75
   showDebugLogs: 0
 --- !u!82 &447860615
 AudioSource:
@@ -3651,7 +3651,6 @@ MonoBehaviour:
   - {fileID: 1801642331}
   - {fileID: 1636572266}
   - {fileID: 1836212821}
-  - {fileID: 1548871717}
   fadeOutDuration: 0.45
   deactivateAfterFade: 1
 --- !u!4 &591544332
@@ -3707,7 +3706,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 120, y: 120}
+  m_SizeDelta: {x: 160, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &623000362
 MonoBehaviour:
@@ -3727,15 +3726,14 @@ MonoBehaviour:
   dragonFaceRect: {fileID: 623000361}
   unmutedSprite: {fileID: 21300000, guid: 5ac90811688489f4bbd86d023246af3b, type: 3}
   mutedSprite: {fileID: 21300000, guid: 5533f0462ebff2b4a85bbb2fcd360f02, type: 3}
-  animateWhenMuted: 1
+  animateWhenUnmuted: 1
   nodAngle: 30
   nodStepDuration: 0.12
   unmutedAnimationDelay: 2.5
-  animateWhenUnmuted: 1
+  animateWhenMuted: 1
   shakeAmount: 5
   shakeDuration: 0.35
   mutedAnimationDelay: 3
-  showActionIcon: 1
 --- !u!114 &623000363
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7770,8 +7768,8 @@ RectTransform:
   - {fileID: 318228640}
   - {fileID: 1636572262}
   - {fileID: 1836212816}
-  - {fileID: 1548871715}
   - {fileID: 243029868}
+  - {fileID: 1548871715}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -8094,7 +8092,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 120, y: 120}
+  m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1548871716
 MonoBehaviour:
@@ -8109,21 +8107,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIPhysicalOrientationPositioner
   applyPanelSize: 1
-  size: {x: 120, y: 120}
+  size: {x: 160, y: 160}
   margin: {x: 20, y: 20}
-  rotatePanelWithDevice: 1
+  rotatePanelWithDevice: 0
   portraitCorner: 3
   portraitUpsideDownCorner: 0
   landscapeLeftCorner: 1
   landscapeRightCorner: 2
   portraitRotation: 0
-  portraitUpsideDownRotation: 180
-  landscapeLeftRotation: -90
-  landscapeRightRotation: 90
-  portraitExtraOffset: {x: 0, y: -100}
-  portraitUpsideDownExtraOffset: {x: 0, y: 100}
-  landscapeLeftExtraOffset: {x: -100, y: 0}
-  landscapeRightExtraOffset: {x: -30, y: -135}
+  portraitUpsideDownRotation: 0
+  landscapeLeftRotation: 0
+  landscapeRightRotation: 0
+  portraitExtraOffset: {x: 0, y: 0}
+  portraitUpsideDownExtraOffset: {x: 0, y: 0}
+  landscapeLeftExtraOffset: {x: 0, y: 0}
+  landscapeRightExtraOffset: {x: 0, y: 0}
 --- !u!225 &1548871717
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -10316,61 +10314,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &1895442533
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1895442535}
-  - component: {fileID: 1895442534}
-  m_Layer: 0
-  m_Name: AudioLabController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1895442534
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1895442533}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aad746358142af44e8629b0020e966be, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LabAudioController
-  instructionAudioSource: {fileID: 318228645}
-  musicAudioSource: {fileID: 447860615}
-  sfxAudioSources: []
-  instructionNormalVolume: 1
-  musicNormalVolume: 0.483
-  sfxNormalVolume: 1
-  instructionMutedVolume: 0
-  musicMutedVolume: 0
-  sfxMutedVolume: 0
-  fadeDuration: 0.35
-  muted: 0
---- !u!4 &1895442535
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1895442533}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 555.05524, y: 1174.5457, z: -0.00001}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1910341590
 GameObject:
   m_ObjectHideFlags: 0
@@ -11794,4 +11737,3 @@ SceneRoots:
   - {fileID: 591544332}
   - {fileID: 1635267283}
   - {fileID: 663732375}
-  - {fileID: 1895442535}

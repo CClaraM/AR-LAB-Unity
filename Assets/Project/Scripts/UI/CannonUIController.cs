@@ -19,6 +19,11 @@ public class CannonUIController : MonoBehaviour
     [SerializeField] private Button rightButton;
     [SerializeField] private Button upButton;
     [SerializeField] private Button downButton;
+    [SerializeField] private Button powerUpButton;
+    [SerializeField] private Button powerDownButton;
+
+    [SerializeField] private float pitchStep = 0.1f;
+    [SerializeField] private float powerStep = 0.1f;
 
     [Header("Fire Button Visual")]
     [SerializeField] private LaunchButtonVisualState fireButtonVisualState;
@@ -27,13 +32,13 @@ public class CannonUIController : MonoBehaviour
     [SerializeField] private Slider powerSlider;
     [SerializeField] private TMP_InputField powerInput;
     [SerializeField] private TMP_Text powerText;
-    [SerializeField] private string powerFormat = "Velocidad: {0:0.0} m/s";
+    [SerializeField] private string powerFormat = "Velocidad: {0:0.00} m/s";
 
     [Header("Pitch UI")]
     [SerializeField] private Slider pitchSlider;
     [SerializeField] private TMP_InputField pitchInput;
     [SerializeField] private TMP_Text pitchText;
-    [SerializeField] private string pitchFormat = "Ángulo: {0:0.0}°";
+    [SerializeField] private string pitchFormat = "Ángulo: {0:0.00}°";
 
     private CannonLauncher currentLauncher;
     private CannonAimController currentAimController;
@@ -61,6 +66,18 @@ public class CannonUIController : MonoBehaviour
 
         if (pitchInput != null)
             pitchInput.onEndEdit.AddListener(SetPitchFromInput);
+
+        if (upButton != null)
+            upButton.onClick.AddListener(IncreasePitchStep);
+
+        if (downButton != null)
+            downButton.onClick.AddListener(DecreasePitchStep);
+
+        if (powerUpButton != null)
+            powerUpButton.onClick.AddListener(IncreasePowerStep);
+
+        if (powerDownButton != null)
+            powerDownButton.onClick.AddListener(DecreasePowerStep);
     }
 
     public void SetCannon(CannonLauncher launcher, CannonAimController aimController)
@@ -204,6 +221,58 @@ public class CannonUIController : MonoBehaviour
 
         ApplyPitch(value);
         UpdatePitchUI(value);
+    }
+
+    private void IncreasePitchStep()
+    {
+        if (currentAimController == null)
+            return;
+
+        float value = currentAimController.CurrentPitch + pitchStep;
+        value = Mathf.Clamp(value, currentAimController.MinPitch, currentAimController.MaxPitch);
+
+        ApplyPitch(value);
+        UpdatePitchUI(value);
+    }
+
+    private void DecreasePitchStep()
+    {
+        if (currentAimController == null)
+            return;
+
+        float value = currentAimController.CurrentPitch - pitchStep;
+        value = Mathf.Clamp(value, currentAimController.MinPitch, currentAimController.MaxPitch);
+
+        ApplyPitch(value);
+        UpdatePitchUI(value);
+    }
+
+    private void IncreasePowerStep()
+    {
+        if (currentLauncher == null)
+            return;
+
+        float value = currentLauncher.CurrentLaunchPower + powerStep;
+
+        if (powerSlider != null)
+            value = Mathf.Clamp(value, powerSlider.minValue, powerSlider.maxValue);
+
+        ApplyPower(value);
+        UpdatePowerUI(value);
+    }
+
+    private void DecreasePowerStep()
+    {
+        if (currentLauncher == null)
+            return;
+
+        float value = currentLauncher.CurrentLaunchPower - powerStep;
+
+        if (powerSlider != null)
+            value = Mathf.Clamp(value, powerSlider.minValue, powerSlider.maxValue);
+
+        ApplyPower(value);
+        UpdatePowerUI(value);
     }
 
     private void ApplyPower(float value)

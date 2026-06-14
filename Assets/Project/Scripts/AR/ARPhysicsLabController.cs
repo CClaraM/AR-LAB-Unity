@@ -168,15 +168,19 @@ public class ARPhysicsLabController : MonoBehaviour
 
     private IEnumerator IntroFlowRoutine()
     {
-        //currentState = LabState.Intro;
         SetState(LabState.Intro);
+
+        bool finished = false;
 
         if (instructionPanelController != null && introStep != null)
         {
-            instructionPanelController.ShowStep(introStep);
-            yield return new WaitForSecondsRealtime(
-                instructionPanelController.GetTotalStepDuration(introStep)
+            instructionPanelController.ShowStep(
+                introStep,
+                () => finished = true
             );
+
+            yield return new WaitUntil(() => finished);
+
         }
 
         introRoutine = null;
@@ -521,21 +525,64 @@ public class ARPhysicsLabController : MonoBehaviour
             case ProjectileImpactType.HitTarget:
                 finalHitTarget = true;
                 labLocked = true;
+
                 SetState(LabState.Completed);
-                ShowHitTargetInstruction();
-                StartFinalResultsSequence(hitTargetStep);
+
+                //ShowHitTargetInstruction();
+                //StartFinalResultsSequence(hitTargetStep);
+                if (instructionPanelController != null && hitTargetStep != null)
+                {
+                    instructionPanelController.ShowTemporaryStep(
+                        hitTargetStep,
+                        TemporaryRestoreMode.HideAfterTemporary,
+                        () => StartFinalResultsSequence()
+                    );
+                }
+                else
+                {
+                    StartFinalResultsSequence();
+                }
+
                 break;
 
             case ProjectileImpactType.MissedTarget:
                 SetState(LabState.AttemptResult);
-                ShowMissedTargetInstruction();
-                StartReturnToReadyAfterTemporaryStep(missedTargetStep);
+
+                if (instructionPanelController != null && missedTargetStep != null)
+                {
+                    instructionPanelController.ShowTemporaryStep(
+                        missedTargetStep,
+                        TemporaryRestoreMode.HideAfterTemporary,
+                        () => ReturnToReadyIfPossible(false)
+                    );
+                }
+                else
+                {
+                    ReturnToReadyIfPossible(false);
+                }
+
                 break;
 
             case ProjectileImpactType.OutOfBounds:
+                //SetState(LabState.AttemptResult);
+                //ShowOutOfBoundsInstruction();
+                //StartReturnToReadyAfterTemporaryStep(outOfBoundsStep);
+                //break;
                 SetState(LabState.AttemptResult);
-                ShowOutOfBoundsInstruction();
-                StartReturnToReadyAfterTemporaryStep(outOfBoundsStep);
+
+                if (instructionPanelController != null && outOfBoundsStep != null)
+                {
+                    instructionPanelController.ShowTemporaryStep(
+                        outOfBoundsStep,
+                        TemporaryRestoreMode.HideAfterTemporary,
+                        () => ReturnToReadyIfPossible(false)
+                    );
+                }
+                else
+                {
+                    ReturnToReadyIfPossible(false);
+                }
+
                 break;
         }
     }
@@ -608,8 +655,20 @@ public class ARPhysicsLabController : MonoBehaviour
         {
             labLocked = true;
             SetState(LabState.Completed);
-            ShowNoAttemptsInstruction();
-            StartFinalResultsSequence(noAttemptsStep);
+
+            //ShowNoAttemptsInstruction();
+            //StartFinalResultsSequence(noAttemptsStep);
+            if (instructionPanelController != null && noAttemptsStep != null)
+            {
+                instructionPanelController.ShowStep(
+                    noAttemptsStep,
+                    () => StartFinalResultsSequence()
+                );
+            }
+            else
+            {
+                StartFinalResultsSequence();
+            }
             return;
         }
 
@@ -730,34 +789,39 @@ public class ARPhysicsLabController : MonoBehaviour
         ReturnToReadyIfPossible(false);
     }
 
-    private void StartFinalResultsSequence(InstructionStep finalInstructionStep)
+    private void StartFinalResultsSequence()
     {
         if (finalSequenceStarted)
             return;
 
         finalSequenceStarted = true;
 
-        StartCoroutine(FinalResultsSequenceRoutine(finalInstructionStep));
+        StartCoroutine(FinalResultsSequenceRoutine());
     }
 
-    private IEnumerator FinalResultsSequenceRoutine(InstructionStep finalInstructionStep)
+    private IEnumerator FinalResultsSequenceRoutine()
     {
-        float instructionDuration = 0f;
+        //float instructionDuration = 0f;
 
-        if (instructionPanelController != null && finalInstructionStep != null)
-        {
-            instructionDuration = instructionPanelController.GetTotalStepDuration(finalInstructionStep);
-        }
+        //if (instructionPanelController != null && finalInstructionStep != null)
+        //{
+        //    instructionDuration = instructionPanelController.GetTotalStepDuration(finalInstructionStep);
+        //}
 
-        yield return new WaitForSecondsRealtime(instructionDuration + 0.15f);
-
-        if (labUIFadeController != null)
-            labUIFadeController.HideGameplayUI();
+        //yield return new WaitForSecondsRealtime(instructionDuration + 0.15f);
 
         yield return new WaitForSecondsRealtime(delayBeforeFinalPanel);
 
+        //if (labUIFadeController != null)
+        //    labUIFadeController.HideGameplayUI();
+
         if (arLabSceneCleaner != null)
             arLabSceneCleaner.CleanScene();
+
+        //yield return new WaitForSecondsRealtime(delayBeforeFinalPanel);
+
+        //if (arLabSceneCleaner != null)
+        //    arLabSceneCleaner.CleanScene();
 
         LabFinalResult finalResult = BuildFinalResultObject(true);
         string json = JsonUtility.ToJson(finalResult, true);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -30,12 +31,33 @@ public class InstructionPanelController : MonoBehaviour
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
 
+    [Header("Mute Button")]
+    [SerializeField] private Button muteButton;
+    [SerializeField] private RectTransform muteRect;
+
+    [Header("Instruction Controls")]
+    [SerializeField] private bool audioMuted = false;
+    [SerializeField] private bool allowSkip = true;
+
+    [Header("Instruction Buttons")]
+    [SerializeField] private GameObject skipButtonRoot;
+    [SerializeField] private UnityEngine.UI.Button skipButton;
+
+    [Header("Instruction Audio Volume")]
+    [SerializeField] private float normalInstructionVolume = 1f;
+    [SerializeField] private float mutedInstructionVolume = 0f;
+    [SerializeField] private float muteFadeDuration = 0.35f;
+
     [Header("Default Fade")]
     [SerializeField] private float fadeInDuration = 0.35f;
     [SerializeField] private float fadeOutDuration = 0.35f;
 
     private InstructionStep currentPersistentStep;
     private Coroutine routine;
+
+    private bool skipRequested;
+    private Coroutine audioVolumeRoutine;
+    public bool IsAudioMuted => audioMuted;
 
     private void Awake()
     {
@@ -69,9 +91,14 @@ public class InstructionPanelController : MonoBehaviour
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
         }
+
+        if (LabAudioController.Instance != null && audioSource != null)
+        {
+            LabAudioController.Instance.RegisterInstructionAudioSource(audioSource);
+        }
     }
 
-    public void ShowStep(InstructionStep step)
+    public void ShowStep(InstructionStep step, Action onFinished = null)
     {
         if (step == null)
         {
@@ -79,17 +106,18 @@ public class InstructionPanelController : MonoBehaviour
             return;
         }
 
-        currentPersistentStep = step; // Conservar es estado
+        currentPersistentStep = step;
 
         if (routine != null)
             StopCoroutine(routine);
 
-        routine = StartCoroutine(ShowStepRoutine(step));
+        routine = StartCoroutine(ShowStepWithCallbackRoutine(step, onFinished));
     }
 
     public void ShowTemporaryStep(
     InstructionStep temporaryStep,
-    TemporaryRestoreMode restoreMode = TemporaryRestoreMode.RestoreVisualOnly
+    TemporaryRestoreMode restoreMode = TemporaryRestoreMode.RestoreVisualOnly,
+    Action onFinished = null
 )
     {
         if (temporaryStep == null)
@@ -101,9 +129,10 @@ public class InstructionPanelController : MonoBehaviour
         if (routine != null)
             StopCoroutine(routine);
 
-        routine = StartCoroutine(ShowTemporaryStepRoutine(temporaryStep, restoreMode));
+        routine = StartCoroutine(
+            ShowTemporaryStepRoutine(temporaryStep, restoreMode, onFinished)
+        );
     }
-
 
     public void Hide()
     {
@@ -132,8 +161,12 @@ public class InstructionPanelController : MonoBehaviour
 
     private IEnumerator ShowStepRoutine(InstructionStep step)
     {
+        skipRequested = false;
+
         if (panelRoot != null)
             panelRoot.SetActive(true);
+
+        SetInstructionInteraction(true);
 
         ApplyDragon(step);
         ApplyMessageLayout(step);
@@ -152,9 +185,6 @@ public class InstructionPanelController : MonoBehaviour
         if (canvasGroup == null)
             yield break;
 
-        canvasGroup.interactable = false;
-        canvasGroup.blocksRaycasts = false;
-
         yield return new WaitForSecondsRealtime(step.showDelay);
 
         yield return FadeTo(1f, fadeInDuration);
@@ -165,17 +195,31 @@ public class InstructionPanelController : MonoBehaviour
         }
         else
         {
-            yield return new WaitForSecondsRealtime(step.visibleDuration);
+            yield return WaitStepRealtime(step.visibleDuration);
         }
 
-        if (step.autoHide)
+        if (step.autoHide || skipRequested)
         {
             yield return FadeTo(0f, fadeOutDuration);
+            SetInstructionInteraction(false);
         }
+    }
+
+    private IEnumerator ShowStepWithCallbackRoutine(InstructionStep step, Action onFinished)
+    {
+        yield return ShowStepRoutine(step);
+
+        routine = null;
+        onFinished?.Invoke();
     }
 
     private IEnumerator ShowTextBlocksRoutine(InstructionStep step)
     {
+        skipRequested = false;
+
+        if (step == null || step.textBlocks == null)
+            yield break;
+
         for (int i = 0; i < step.textBlocks.Length; i++)
         {
             InstructionTextBlock block = step.textBlocks[i];
@@ -186,13 +230,31 @@ public class InstructionPanelController : MonoBehaviour
             if (instructionText != null)
                 instructionText.text = block.text;
 
-            yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, block.duration));
+            yield return WaitStepRealtime(Mathf.Max(0.1f, block.duration));
+
+            if (skipRequested)
+                yield break;
+        }
+    }
+
+    private IEnumerator WaitStepRealtime(float duration)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (skipRequested)
+                yield break;
+
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
         }
     }
 
     private IEnumerator ShowTemporaryStepRoutine(
     InstructionStep temporaryStep,
-    TemporaryRestoreMode restoreMode
+    TemporaryRestoreMode restoreMode,
+    Action onFinished
 )
     {
         yield return ShowStepRoutine(temporaryStep);
@@ -202,7 +264,7 @@ public class InstructionPanelController : MonoBehaviour
             case TemporaryRestoreMode.RestoreFullStep:
                 if (currentPersistentStep != null)
                 {
-                    routine = StartCoroutine(ShowStepRoutine(currentPersistentStep));
+                    yield return ShowStepRoutine(currentPersistentStep);
                 }
                 break;
 
@@ -217,6 +279,9 @@ public class InstructionPanelController : MonoBehaviour
                 yield return HideRoutine();
                 break;
         }
+
+        routine = null;
+        onFinished?.Invoke();
     }
 
     private void ApplyStepVisualOnly(InstructionStep step)
@@ -333,20 +398,105 @@ public class InstructionPanelController : MonoBehaviour
 
     private void PlayAudio(InstructionStep step)
     {
-        if (audioSource == null)
+        if (audioSource == null || step == null || step.audioClip == null)
             return;
 
         audioSource.Stop();
+        audioSource.clip = step.audioClip;
+        audioSource.mute = false;
 
-        if (step.audioClip != null)
+        audioSource.volume = LabAudioController.Instance != null
+            ? LabAudioController.Instance.GetInstructionTargetVolume()
+            : 1f;
+
+        audioSource.Play();
+    }
+
+    public void ToggleMute()
+    {
+        SetMuted(!audioMuted);
+    }
+
+    public void SetMuted(bool muted)
+    {
+        audioMuted = muted;
+
+        float targetVolume = audioMuted
+            ? mutedInstructionVolume
+            : normalInstructionVolume;
+
+        FadeInstructionAudioVolume(targetVolume, muteFadeDuration);
+    }
+
+    private void FadeInstructionAudioVolume(float targetVolume, float duration)
+    {
+        if (audioSource == null)
+            return;
+
+        if (audioVolumeRoutine != null)
+            StopCoroutine(audioVolumeRoutine);
+
+        audioVolumeRoutine = StartCoroutine(
+            FadeInstructionAudioVolumeRoutine(targetVolume, duration)
+        );
+    }
+
+    private IEnumerator FadeInstructionAudioVolumeRoutine(float targetVolume, float duration)
+    {
+        if (audioSource == null)
+            yield break;
+
+        float startVolume = audioSource.volume;
+
+        if (duration <= 0f)
         {
-            audioSource.clip = step.audioClip;
-            audioSource.Play();
+            audioSource.volume = targetVolume;
+            audioVolumeRoutine = null;
+            yield break;
         }
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            audioSource.volume = Mathf.Lerp(startVolume, targetVolume, t);
+
+            yield return null;
+        }
+
+        audioSource.volume = targetVolume;
+        audioVolumeRoutine = null;
+    }
+
+    public void SkipCurrentInstruction()
+    {
+        if (!allowSkip)
+            return;
+
+        skipRequested = true;
+
+        if (audioVolumeRoutine != null)
+        {
+            StopCoroutine(audioVolumeRoutine);
+            audioVolumeRoutine = null;
+        }
+
+        if (audioSource != null)
+            audioSource.Stop();
     }
 
     private IEnumerator HideRoutine()
     {
+        skipRequested = true;
+
+        if (audioSource != null)
+            audioSource.Stop();
+
+        SetInstructionInteraction(false);
+
         if (canvasGroup != null)
             yield return FadeTo(0f, fadeOutDuration);
     }
@@ -376,5 +526,20 @@ public class InstructionPanelController : MonoBehaviour
         }
 
         canvasGroup.alpha = targetAlpha;
+    }
+
+    private void SetInstructionInteraction(bool enabled)
+    {
+        if (canvasGroup != null)
+        {
+            canvasGroup.interactable = enabled;
+            canvasGroup.blocksRaycasts = enabled;
+        }
+
+        if (skipButtonRoot != null)
+            skipButtonRoot.SetActive(enabled);
+
+        if (skipButton != null)
+            skipButton.interactable = enabled && allowSkip;
     }
 }

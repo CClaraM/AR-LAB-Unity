@@ -1485,7 +1485,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6130833049127804513, guid: ec5a24eefe2c26e4b99f71c5739aac2a, type: 3}
       propertyPath: slowMotionScale
-      value: 0.3
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 6130833049127804513, guid: ec5a24eefe2c26e4b99f71c5739aac2a, type: 3}
       propertyPath: useSlowMotionOnFire
@@ -1573,7 +1573,7 @@ MonoBehaviour:
   maxYaw: 90
   pitchStepDegrees: 0.05
   minPitch: -5
-  maxPitch: 75
+  maxPitch: 80
   initialYaw: 0
   initialPitch: 0
 --- !u!4 &7732764955854915829 stripped
