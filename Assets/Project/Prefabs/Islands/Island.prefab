@@ -1485,7 +1485,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6130833049127804513, guid: ec5a24eefe2c26e4b99f71c5739aac2a, type: 3}
       propertyPath: slowMotionScale
-      value: 0.2
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 6130833049127804513, guid: ec5a24eefe2c26e4b99f71c5739aac2a, type: 3}
+      propertyPath: slowMotionDuration
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 6130833049127804513, guid: ec5a24eefe2c26e4b99f71c5739aac2a, type: 3}
       propertyPath: useSlowMotionOnFire

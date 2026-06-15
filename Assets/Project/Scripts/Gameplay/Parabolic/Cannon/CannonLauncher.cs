@@ -41,6 +41,7 @@ public class CannonLauncher : MonoBehaviour
 
     public Transform FirePoint => firePoint;
     public float CurrentLaunchPower => launchPower;
+    public GameObject LastProjectile { get; private set; }
 
     public bool Fire()
     {
@@ -56,11 +57,21 @@ public class CannonLauncher : MonoBehaviour
             return false;
         }
 
-        GameObject projectile = Instantiate(
+        //GameObject projectile = Instantiate(
+        //    projectilePrefab,
+        //    firePoint.position,
+        //    firePoint.rotation
+        //);
+
+        Vector3 spawnPosition = firePoint.position + firePoint.forward * 0.05f;
+
+        LastProjectile = Instantiate(
             projectilePrefab,
-            firePoint.position,
+            spawnPosition,
             firePoint.rotation
         );
+
+        GameObject projectile = LastProjectile;
 
         ProjectileImpactReporter reporter =
             projectile.GetComponent<ProjectileImpactReporter>();

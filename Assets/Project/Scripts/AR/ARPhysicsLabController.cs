@@ -64,6 +64,13 @@ public class ARPhysicsLabController : MonoBehaviour
     [Header("Impact Visualization")]
     [SerializeField] private ImpactMeasurementVisualizer impactMeasurementVisualizer;
 
+    [Header("Trajectory Preview")]
+    [SerializeField] private TrajectoryPreview trajectoryPreview;
+
+    [Header("Projectile Camera")]
+    [SerializeField] private ProjectileFlightCameraController projectileFlightCameraController;
+    [SerializeField] private UnityEngine.UI.Toggle projectileCameraToggle;
+
     [Header("Runtime Attempt Data")]
     [SerializeField] private float currentShotPower;
     [SerializeField] private float currentShotAngle;
@@ -342,7 +349,6 @@ public class ARPhysicsLabController : MonoBehaviour
         if (remainingAttempts <= 0)
         {
             Debug.LogWarning("No quedan intentos.");
-            //labLocked = true;
             UpdateAttemptsUI();
             ShowNoAttemptsInstruction();
             return false;
@@ -368,6 +374,8 @@ public class ARPhysicsLabController : MonoBehaviour
         UpdateAttemptsUI();
 
         SetState(LabState.ProjectileInFlight);
+
+        StartProjectileCameraIfEnabled(launcher);
 
         return true;
     }
@@ -513,6 +521,8 @@ public class ARPhysicsLabController : MonoBehaviour
         ShowImpactMeasurementIfNeeded(data);
         ClearCurrentShotData();
 
+        //RestoreProjectileCameraIfActive();
+
         Debug.Log(
             $"Impacto: {data.impactType} | " +
             $"Distancia al target: {data.impactDistanceToTarget:0.00} m | " +
@@ -520,7 +530,19 @@ public class ARPhysicsLabController : MonoBehaviour
             $"Altura: {data.impactHeightDifference:0.00} m"
         );
 
-        switch (data.impactType)
+        if (projectileFlightCameraController != null &&
+            projectileFlightCameraController.IsActive)
+        {
+            projectileFlightCameraController.RestoreARCameraAfterImpactDelay(
+                () => ContinueAfterProjectileImpact(data)
+            );
+
+            return;
+        }
+
+        ContinueAfterProjectileImpact(data);
+
+        /*switch (data.impactType)
         {
             case ProjectileImpactType.HitTarget:
                 finalHitTarget = true;
@@ -528,8 +550,6 @@ public class ARPhysicsLabController : MonoBehaviour
 
                 SetState(LabState.Completed);
 
-                //ShowHitTargetInstruction();
-                //StartFinalResultsSequence(hitTargetStep);
                 if (instructionPanelController != null && hitTargetStep != null)
                 {
                     instructionPanelController.ShowTemporaryStep(
@@ -564,10 +584,69 @@ public class ARPhysicsLabController : MonoBehaviour
                 break;
 
             case ProjectileImpactType.OutOfBounds:
-                //SetState(LabState.AttemptResult);
-                //ShowOutOfBoundsInstruction();
-                //StartReturnToReadyAfterTemporaryStep(outOfBoundsStep);
-                //break;
+                SetState(LabState.AttemptResult);
+
+                if (instructionPanelController != null && outOfBoundsStep != null)
+                {
+                    instructionPanelController.ShowTemporaryStep(
+                        outOfBoundsStep,
+                        TemporaryRestoreMode.HideAfterTemporary,
+                        () => ReturnToReadyIfPossible(false)
+                    );
+                }
+                else
+                {
+                    ReturnToReadyIfPossible(false);
+                }
+
+                break;
+        }*/
+    }
+
+    private void ContinueAfterProjectileImpact(ProjectileImpactData data)
+    {
+        switch (data.impactType)
+        {
+            case ProjectileImpactType.HitTarget:
+                finalHitTarget = true;
+                labLocked = true;
+
+                SetState(LabState.Completed);
+
+                if (instructionPanelController != null && hitTargetStep != null)
+                {
+                    instructionPanelController.ShowTemporaryStep(
+                        hitTargetStep,
+                        TemporaryRestoreMode.HideAfterTemporary,
+                        () => StartFinalResultsSequence()
+                    );
+                }
+                else
+                {
+                    StartFinalResultsSequence();
+                }
+
+                break;
+
+            case ProjectileImpactType.MissedTarget:
+                SetState(LabState.AttemptResult);
+
+                if (instructionPanelController != null && missedTargetStep != null)
+                {
+                    instructionPanelController.ShowTemporaryStep(
+                        missedTargetStep,
+                        TemporaryRestoreMode.HideAfterTemporary,
+                        () => ReturnToReadyIfPossible(false)
+                    );
+                }
+                else
+                {
+                    ReturnToReadyIfPossible(false);
+                }
+
+                break;
+
+            case ProjectileImpactType.OutOfBounds:
                 SetState(LabState.AttemptResult);
 
                 if (instructionPanelController != null && outOfBoundsStep != null)
@@ -756,10 +835,17 @@ public class ARPhysicsLabController : MonoBehaviour
 
     private void UpdateFireButtonState()
     {
-        if (cannonUIController == null)
+        bool canFire = CanFire();
+
+        if (cannonUIController != null)
+            cannonUIController.SetFireButtonInteractable(canFire);
+
+        if (trajectoryPreview != null)
+            trajectoryPreview.SetVisible(canFire);
+        /*if (cannonUIController == null)
             return;
 
-        cannonUIController.SetFireButtonInteractable(CanFire());
+        cannonUIController.SetFireButtonInteractable(CanFire());*/
     }
 
     private void StartReturnToReadyAfterTemporaryStep(InstructionStep step)
@@ -801,27 +887,10 @@ public class ARPhysicsLabController : MonoBehaviour
 
     private IEnumerator FinalResultsSequenceRoutine()
     {
-        //float instructionDuration = 0f;
-
-        //if (instructionPanelController != null && finalInstructionStep != null)
-        //{
-        //    instructionDuration = instructionPanelController.GetTotalStepDuration(finalInstructionStep);
-        //}
-
-        //yield return new WaitForSecondsRealtime(instructionDuration + 0.15f);
-
         yield return new WaitForSecondsRealtime(delayBeforeFinalPanel);
-
-        //if (labUIFadeController != null)
-        //    labUIFadeController.HideGameplayUI();
 
         if (arLabSceneCleaner != null)
             arLabSceneCleaner.CleanScene();
-
-        //yield return new WaitForSecondsRealtime(delayBeforeFinalPanel);
-
-        //if (arLabSceneCleaner != null)
-        //    arLabSceneCleaner.CleanScene();
 
         LabFinalResult finalResult = BuildFinalResultObject(true);
         string json = JsonUtility.ToJson(finalResult, true);
@@ -830,5 +899,43 @@ public class ARPhysicsLabController : MonoBehaviour
 
         if (resultsPanelController != null)
             resultsPanelController.ShowResults(finalResult, json);
+    }
+
+    private bool UseProjectileCamera()
+    {
+        return projectileCameraToggle != null && projectileCameraToggle.isOn;
+    }
+
+    private void StartProjectileCameraIfEnabled(CannonLauncher launcher)
+    {
+        if (!UseProjectileCamera())
+            return;
+
+        if (projectileFlightCameraController == null)
+        {
+            Debug.LogWarning("Falta ProjectileFlightCameraController.");
+            return;
+        }
+
+        if (launcher == null || launcher.LastProjectile == null)
+        {
+            Debug.LogWarning("No se pudo activar cámara: LastProjectile es null.");
+            return;
+        }
+
+        projectileFlightCameraController.StartFollow(
+            launcher.LastProjectile.transform
+        );
+    }
+
+    private void RestoreProjectileCameraIfActive()
+    {
+        if (projectileFlightCameraController == null)
+            return;
+
+        if (!projectileFlightCameraController.IsActive)
+            return;
+
+        projectileFlightCameraController.RestoreARCamera();
     }
 }
