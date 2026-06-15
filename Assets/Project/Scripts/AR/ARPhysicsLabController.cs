@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -87,6 +88,9 @@ public class ARPhysicsLabController : MonoBehaviour
 
     private Coroutine returnToReadyRoutine;
 
+    private LabLocalProgress currentLocalProgress;
+    private string currentRunId;
+
 
     private bool finalHitTarget;
     private bool suppressNextReadyInstruction;
@@ -119,7 +123,7 @@ public class ARPhysicsLabController : MonoBehaviour
     private void Start()
     {
         ApplyExerciseData(AndroidBridge.Instance != null
-            ? AndroidBridge.Instance.CurrentExerciseData
+            ? AndroidBridge.Instance.CurrentLabInput
             : null);
 
         if (placementManager != null)
@@ -315,19 +319,98 @@ public class ARPhysicsLabController : MonoBehaviour
         }
     }
 
-    public void ApplyExerciseData(ExerciseData data)
+    private void LoadLocalProgress(LabLocalProgress progress)
+    {
+        currentLocalProgress = progress;
+
+        maxAttempts = progress.maxAttempts;
+        usedAttempts = progress.usedAttempts;
+        remainingAttempts = progress.remainingAttempts;
+
+        labLocked = false;
+        finalHitTarget = progress.hitTarget;
+
+        attemptResults.Clear();
+
+        if (progress.attempts != null)
+            attemptResults.AddRange(progress.attempts);
+
+        Debug.Log(
+            $"Progreso local cargado. RunId: {progress.runId} | " +
+            $"Usados: {usedAttempts} | Restantes: {remainingAttempts}"
+        );
+    }
+
+    private void CreateInitialLocalProgress(LabBridgeInput data)
+    {
+        if (data == null || string.IsNullOrEmpty(data.runId))
+            return;
+
+        currentLocalProgress = new LabLocalProgress
+        {
+            schemaVersion = data.schemaVersion,
+            requestId = data.requestId,
+            runId = data.runId,
+
+            labKey = data.scene != null ? data.scene.labKey : "PARABOLIC-001",
+            exerciseId = data.exercise != null ? data.exercise.exerciseId : "",
+
+            participantId = data.participant != null ? data.participant.participantId : "",
+            participantName = data.participant != null ? data.participant.displayName : "",
+
+            maxAttempts = maxAttempts,
+            usedAttempts = usedAttempts,
+            remainingAttempts = remainingAttempts,
+
+            completed = false,
+            hitTarget = false,
+
+            attempts = attemptResults.ToArray(),
+
+            startedAt = DateTime.UtcNow.ToString("o"),
+            updatedAt = DateTime.UtcNow.ToString("o")
+        };
+
+        LabProgressStorage.Save(currentLocalProgress);
+    }
+
+    public void ApplyExerciseData(LabBridgeInput data)
     {
         int configuredAttempts = defaultMaxAttempts;
 
-        if (data != null && data.maxAttempts > 0)
+        currentRunId = data != null ? data.runId : "";
+
+        bool allowResume = data != null &&
+                           data.exercise != null &&
+                           data.exercise.allowResume;
+
+        if (!string.IsNullOrEmpty(currentRunId) && allowResume)
         {
-            configuredAttempts = data.maxAttempts;
+            LabLocalProgress savedProgress = LabProgressStorage.Load(currentRunId);
+
+            if (savedProgress != null && !savedProgress.completed)
+            {
+                LoadLocalProgress(savedProgress);
+                UpdateAttemptsUI();
+                return;
+            }
+        }
+
+        if (data != null &&
+            data.exercise != null &&
+            data.exercise.maxAttempts > 0)
+        {
+            configuredAttempts = data.exercise.maxAttempts;
         }
 
         maxAttempts = configuredAttempts;
         remainingAttempts = maxAttempts;
         usedAttempts = 0;
         labLocked = false;
+        finalHitTarget = false;
+        attemptResults.Clear();
+
+        CreateInitialLocalProgress(data);
 
         UpdateAttemptsUI();
     }
@@ -779,8 +862,33 @@ public class ARPhysicsLabController : MonoBehaviour
         };
 
         attemptResults.Add(result);
+        SaveCurrentProgress();
 
         Debug.Log($"Intento agregado al JSON: {JsonUtility.ToJson(result)}");
+    }
+
+    private void SaveCurrentProgress()
+    {
+        LabBridgeInput input = AndroidBridge.Instance != null
+            ? AndroidBridge.Instance.CurrentLabInput
+            : null;
+
+        if (input == null || string.IsNullOrEmpty(input.runId))
+            return;
+
+        if (currentLocalProgress == null)
+            CreateInitialLocalProgress(input);
+
+        if (currentLocalProgress == null)
+            return;
+
+        currentLocalProgress.usedAttempts = usedAttempts;
+        currentLocalProgress.remainingAttempts = remainingAttempts;
+        currentLocalProgress.completed = false;
+        currentLocalProgress.hitTarget = finalHitTarget;
+        currentLocalProgress.attempts = attemptResults.ToArray();
+
+        LabProgressStorage.Save(currentLocalProgress);
     }
 
     private void ShowImpactMeasurementIfNeeded(ProjectileImpactData data)
@@ -800,18 +908,49 @@ public class ARPhysicsLabController : MonoBehaviour
         );
     }
 
-    private LabFinalResult BuildFinalResultObject(bool completed)
+    private LabFinalResult BuildFinalResultObject(bool completed, string resultStatus = "", string exitReason = "")
     {
+        LabBridgeInput input = AndroidBridge.Instance != null
+            ? AndroidBridge.Instance.CurrentLabInput
+            : null;
+
         return new LabFinalResult
         {
-            exerciseId = AndroidBridge.Instance != null &&
-                         AndroidBridge.Instance.CurrentExerciseData != null
-                ? AndroidBridge.Instance.CurrentExerciseData.exerciseId
+            schemaVersion = input != null ? input.schemaVersion : 1,
+
+            requestId = input != null ? input.requestId : "",
+            runId = input != null ? input.runId : "",
+
+            labKey = input != null && input.scene != null
+                ? input.scene.labKey
+                : "PARABOLIC-001",
+
+            unitySceneName = input != null && input.scene != null
+                ? input.scene.unitySceneName
                 : "",
 
-            apprenticeId = AndroidBridge.Instance != null &&
-                           AndroidBridge.Instance.CurrentExerciseData != null
-                ? AndroidBridge.Instance.CurrentExerciseData.learnerId
+            exerciseId = input != null && input.exercise != null
+                ? input.exercise.exerciseId
+                : "",
+
+            participantId = input != null && input.participant != null
+                ? input.participant.participantId
+                : "",
+
+            participantName = input != null && input.participant != null
+                ? input.participant.displayName
+                : "",
+
+            organizationName = input != null && input.context != null
+                ? input.context.organizationName
+                : "",
+
+            courseName = input != null && input.context != null
+                ? input.context.courseName
+                : "",
+
+            groupName = input != null && input.context != null
+                ? input.context.groupName
                 : "",
 
             horizontalDistance = horizontalDistance,
@@ -821,31 +960,85 @@ public class ARPhysicsLabController : MonoBehaviour
             hitTarget = finalHitTarget,
             maxAttempts = maxAttempts,
             usedAttempts = usedAttempts,
+            remainingAttempts = remainingAttempts,
             completed = completed,
+            resultStatus = string.IsNullOrEmpty(resultStatus)
+                ? (completed ? "completed" : "incomplete")
+                : resultStatus,
+            exitReason = exitReason,
 
-            attempts = attemptResults.ToArray()
+            attempts = attemptResults.ToArray(),
+
+            finishedAt = DateTime.UtcNow.ToString("o")
         };
     }
 
-    public string BuildFinalResultJson(bool completed)
+    public string BuildFinalResultJson(
+    bool completed,
+    string resultStatus = "",
+    string exitReason = ""
+)
     {
-        LabFinalResult finalResult = BuildFinalResultObject(completed);
+        LabFinalResult finalResult = BuildFinalResultObject(
+            completed,
+            resultStatus,
+            exitReason
+        );
+
         return JsonUtility.ToJson(finalResult, true);
     }
 
     private void UpdateFireButtonState()
     {
         bool canFire = CanFire();
+        bool canExit = currentState != LabState.ProjectileInFlight &&
+                   currentState != LabState.Results;
 
         if (cannonUIController != null)
+        {
             cannonUIController.SetFireButtonInteractable(canFire);
+            cannonUIController.SetExitButtonInteractable(canExit);
+        }
 
         if (trajectoryPreview != null)
             trajectoryPreview.SetVisible(canFire);
-        /*if (cannonUIController == null)
-            return;
+    }
 
-        cannonUIController.SetFireButtonInteractable(CanFire());*/
+    public void FinishAndReturnToAndroid()
+    {
+        string json = BuildFinalResultJson(
+            true,
+            "completed",
+            ""
+        );
+
+        if (AndroidBridge.Instance != null)
+            AndroidBridge.Instance.FinishLabAndReturn(json);
+
+        LabBridgeInput input = AndroidBridge.Instance != null
+            ? AndroidBridge.Instance.CurrentLabInput
+            : null;
+
+        if (input != null && !string.IsNullOrEmpty(input.runId))
+            LabProgressStorage.Delete(input.runId);
+    }
+
+    public void ExitIncompleteAndReturnToAndroid()
+    {
+        SaveCurrentProgress();
+
+        string json = BuildFinalResultJson(
+            false,
+            "incomplete",
+            "user_exit"
+        );
+
+        if (AndroidBridge.Instance != null)
+            AndroidBridge.Instance.FinishLabAndReturn(json);
+
+        // Importante:
+        // NO borrar LabProgressStorage aquí.
+        // Si se borra, el usuario podría reiniciar el laboratorio sin consumir intentos.
     }
 
     private void StartReturnToReadyAfterTemporaryStep(InstructionStep step)

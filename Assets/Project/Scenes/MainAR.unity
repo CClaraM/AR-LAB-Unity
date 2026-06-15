@@ -8248,6 +8248,7 @@ MonoBehaviour:
   downButton: {fileID: 1566577946}
   powerUpButton: {fileID: 874498855}
   powerDownButton: {fileID: 1764840654}
+  exitButton: {fileID: 421988219}
   pitchStep: 0.1
   powerStep: 0.1
   fireButtonVisualState: {fileID: 0}
@@ -8721,6 +8722,7 @@ MonoBehaviour:
   attemptsContent: {fileID: 791905541}
   attemptRowPrefab: {fileID: 5719994075876907725, guid: af84848d5019619409db9eb09970b065, type: 3}
   exitButton: {fileID: 532743686}
+  labController: {fileID: 554365395}
 --- !u!225 &1562045522
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -9056,7 +9058,7 @@ MonoBehaviour:
   uiFadeDuration: 0.15
   apexVerticalVelocityThreshold: 0.18
   descendingVerticalVelocityThreshold: -0.12
-  ascendingOffset: {x: 0, y: -0.12, z: -0.42}
+  ascendingOffset: {x: 0, y: -0.05, z: -0.52}
   ascendingLookOffset: {x: 0, y: 0.08, z: 0}
   apexOffset: {x: 0, y: 0.05, z: -0.25}
   apexLookOffset: {x: 0, y: 0.05, z: 0}

@@ -4,7 +4,7 @@ using TMPro;
 public class AndroidBridge : MonoBehaviour
 {
     public static AndroidBridge Instance { get; private set; }
-    public ExerciseData CurrentExerciseData { get; private set; }
+    public LabBridgeInput CurrentLabInput { get; private set; }
 
     [SerializeField] private TMP_Text debugText;
 
@@ -12,6 +12,12 @@ public class AndroidBridge : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
     }
 
@@ -67,34 +73,50 @@ public class AndroidBridge : MonoBehaviour
     {
         Debug.Log("JSON recibido desde Android: " + json);
 
-        CurrentExerciseData = JsonUtility.FromJson<ExerciseData>(json);
+        CurrentLabInput = JsonUtility.FromJson<LabBridgeInput>(json);
 
-        if (debugText != null)
+        if (debugText != null && CurrentLabInput != null)
         {
+            string labName = CurrentLabInput.scene != null
+                ? CurrentLabInput.scene.displayName
+                : "Sin laboratorio";
+
+            string participantName = CurrentLabInput.participant != null
+                ? CurrentLabInput.participant.displayName
+                : "Sin participante";
+
+            int attempts = CurrentLabInput.exercise != null
+                ? CurrentLabInput.exercise.maxAttempts
+                : 0;
+
             debugText.text =
-                $"Ejercicio: {CurrentExerciseData.exerciseId}\n" +
-                $"Potencia: {CurrentExerciseData.initialPower}\n" +
-                $"Ángulo: {CurrentExerciseData.initialAngle}\n" +
-                $"Trayectoria: {CurrentExerciseData.showTrajectory}";
+                $"Laboratorio: {labName}\n" +
+                $"Participante: {participantName}\n" +
+                $"Intentos: {attempts}\n" +
+                $"RunId: {CurrentLabInput.runId}";
         }
     }
 
-    public void FinishLabAndReturn()
+    public void FinishLabAndReturn(string resultJson)
     {
-        string resultJson = "{"
-            + "\"exerciseId\":\"PARABOLIC-001\","
-            + "\"hit\":true,"
-            + "\"attempts\":1,"
-            + "\"finalPower\":3.5,"
-            + "\"finalAngle\":35.0"
-            + "}";
+        if (string.IsNullOrEmpty(resultJson))
+        {
+            Debug.LogWarning("AndroidBridge: resultJson está vacío.");
+            return;
+        }
 
         SendResultToAndroid(resultJson);
     }
 
-    public void OnExitButtonPressed()
+    //Borrar
+    public void FinishLabAndReturnDebug()
     {
-        AndroidBridge.Instance.FinishLabAndReturn();
+        string debugResultJson = "{"
+            + "\"debug\":true,"
+            + "\"message\":\"Resultado de prueba desde Unity\""
+            + "}";
+
+        SendResultToAndroid(debugResultJson);
     }
 
     public void SendResultToAndroid(string resultJson)

@@ -21,6 +21,7 @@ public class CannonUIController : MonoBehaviour
     [SerializeField] private Button downButton;
     [SerializeField] private Button powerUpButton;
     [SerializeField] private Button powerDownButton;
+    [SerializeField] private Button exitButton;
 
     [SerializeField] private float pitchStep = 0.1f;
     [SerializeField] private float powerStep = 0.1f;
@@ -373,6 +374,12 @@ public class CannonUIController : MonoBehaviour
         SetFireButtonInteractable(fireInteractable);
     }
 
+    public void SetExitButtonInteractable(bool interactable)
+    {
+        if (exitButton != null)
+            exitButton.interactable = interactable;
+    }
+
     public float GetCurrentPower()
     {
         return currentLauncher != null ? currentLauncher.CurrentLaunchPower : 0f;
@@ -391,7 +398,7 @@ public class CannonUIController : MonoBehaviour
             return;
         }
 
-        AndroidBridge.Instance.FinishLabAndReturn();
+        labController.ExitIncompleteAndReturnToAndroid();
     }
 
     private void AutoWireFireButtonVisual()

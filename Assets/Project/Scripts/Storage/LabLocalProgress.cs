@@ -1,7 +1,7 @@
 using System;
 
 [Serializable]
-public class LabFinalResult
+public class LabLocalProgress
 {
     public int schemaVersion = 1;
 
@@ -9,30 +9,20 @@ public class LabFinalResult
     public string runId;
 
     public string labKey;
-    public string unitySceneName;
-
     public string exerciseId;
 
     public string participantId;
     public string participantName;
 
-    public string organizationName;
-    public string courseName;
-    public string groupName;
-
-    public float horizontalDistance;
-    public float verticalDistance;
-    public float straightDistance;
-
-    public bool hitTarget;
     public int maxAttempts;
     public int usedAttempts;
     public int remainingAttempts;
+
     public bool completed;
-    public string resultStatus;
-    public string exitReason;
+    public bool hitTarget;
 
     public LabAttemptResult[] attempts;
 
-    public string finishedAt;
+    public string startedAt;
+    public string updatedAt;
 }

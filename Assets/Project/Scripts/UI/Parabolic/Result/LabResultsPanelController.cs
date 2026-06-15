@@ -19,6 +19,8 @@ public class LabResultsPanelController : MonoBehaviour
     [Header("Exit")]
     [SerializeField] private Button exitButton;
 
+    [SerializeField] private ARPhysicsLabController labController;
+
     private string finalJson;
 
     private void Awake()
@@ -95,22 +97,15 @@ public class LabResultsPanelController : MonoBehaviour
         }
     }
 
-    private void OnExitPressed()
+    public void OnExitPressed()
     {
-        if (AndroidBridge.Instance == null)
+        if (labController == null)
         {
-            Debug.LogWarning("AndroidBridge.Instance no existe.");
+            Debug.LogWarning("LabResultsPanelController: falta ARPhysicsLabController.");
             return;
         }
 
-        // Ideal:
-        // AndroidBridge.Instance.FinishLabAndReturn(finalJson);
-
-        // Si tu método actual todavía no recibe JSON:
-        Debug.Log("JSON final del laboratorio:");
-        Debug.Log(finalJson);
-
-        AndroidBridge.Instance.FinishLabAndReturn();
+        labController.FinishAndReturnToAndroid();
     }
 
 }
